@@ -397,7 +397,8 @@ function joinAsStudent(){
   if(!name){showToast('Skriv dit navn!','error');return;}
   if(!window._firebaseReady){showToast('Firebase ikke klar endnu...','error');return;}
   currentPlayer=name;
-  var safe=name.replace(/[.#$[\]]/g,'_');
+  // Prefix with 's_' to prevent numeric-only names causing Firebase array issues
+  var safe='s_'+name.replace(/[.#$[\]]/g,'_');
   waitForFirebase(function(){
     // Safety timeout – start game after 4s no matter what
     var gameStarted = false;

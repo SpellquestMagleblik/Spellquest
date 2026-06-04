@@ -429,12 +429,14 @@ function joinAsStudent(){
 
 // ── GAME START ─────────────────────────────────────────────────────────────────
 function beginGame(){
+  var diff = currentDiff || 'easy';
+  currentDiff = diff;
   var labels={easy:'Let - 6. klasse',medium:'Mellem - 7-8. klasse',hard:'Svaer - 9. klasse'};
   document.getElementById('waiting-name').textContent=currentPlayer;
-  document.getElementById('waiting-diff').textContent=labels[currentDiff]||'';
+  document.getElementById('waiting-diff').textContent=labels[diff]||'Let - 6. klasse';
   showScreen('screen-waiting');
   setTimeout(function(){
-    playerWords=getRandWords(currentDiff,WORDS_PER_ROUND);
+    playerWords=getRandWords(diff,WORDS_PER_ROUND);
     wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0;
     document.getElementById('game-player-name').textContent=currentPlayer;
     showScreen('screen-game');

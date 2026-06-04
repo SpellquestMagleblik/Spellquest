@@ -395,18 +395,16 @@ function teacherLogin(){
 function joinAsStudent(){
   var name=document.getElementById('login-name').value.trim();
   if(!name){showToast('Skriv dit navn!','error');return;}
-  if(!window._firebaseReady){showToast('Firebase ikke klar endnu...','error');return;}
   currentPlayer=name;
-  // Prefix with 's_' to prevent numeric-only names causing Firebase array issues
   var safe='s_'+name.replace(/[.#$[\]]/g,'_');
-  waitForFirebase(function(){
-    var safeDiff = currentDiff || 'easy';
+  var safeDiff = currentDiff || 'easy';
 
-    // Start game IMMEDIATELY - Firebase saves in background
-    prevTotalXP = 0; prevTotalCorrect = 0; prevTotalWrong = 0;
-    beginGame();
+  // Start game IMMEDIATELY - no waiting for Firebase
+  prevTotalXP = 0; prevTotalCorrect = 0; prevTotalWrong = 0;
+  beginGame();
 
-    // Save to Firebase in background (non-blocking)
+  // Save to Firebase in background (non-blocking, optional)
+  try {
     if(window._firebaseReady){
       dbGet('students/'+safe).then(function(snap){
         var existing=snap.val()||{};
@@ -426,7 +424,7 @@ function joinAsStudent(){
         });
       }).catch(function(e){console.warn('Firebase read:',e);});
     }
-  });
+  } catch(e){ console.warn('Firebase error:',e); }
 }
 
 // ── GAME START ─────────────────────────────────────────────────────────────────

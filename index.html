@@ -400,40 +400,32 @@ function joinAsStudent(){
   // Prefix with 's_' to prevent numeric-only names causing Firebase array issues
   var safe='s_'+name.replace(/[.#$[\]]/g,'_');
   waitForFirebase(function(){
-    // Safety timeout – start game after 4s no matter what
-    var gameStarted = false;
-    var safetyTimer = setTimeout(function(){
-      if(!gameStarted){ gameStarted=true; beginGame(); }
-    }, 4000);
+    var safeDiff = currentDiff || 'easy';
 
-    // Load any existing accumulated data
-    dbGet('students/'+safe).then(function(snap){
-      var existing=snap.val()||{};
-      prevTotalXP      = existing.totalXP      || 0;
-      prevTotalCorrect = existing.totalCorrect || 0;
-      prevTotalWrong   = existing.totalWrong   || 0;
-      var safeDiff = currentDiff || 'easy';
-      return dbUpdate('students/'+safe,{
-        name:name, difficulty:safeDiff,
-        correct:0, wrong:0, xp:0,
-        totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
-        online:true, joinedAt:Date.now(), kicked:false
-      });
-    }).then(function(){
-      dbOn('students/'+safe+'/kicked',function(snap){
-        if(snap.val()===true){
-          showToast('Du er fjernet fra spillet.','error');
-          setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
-        }
-      });
-      if(!gameStarted){ clearTimeout(safetyTimer); gameStarted=true; beginGame(); }
-    }).catch(function(e){
-      console.error(e);
-      // Start game anyway even if Firebase fails
-      if(!gameStarted){ clearTimeout(safetyTimer); gameStarted=true; beginGame(); }
-    });
-  });
-}
+    // Start game IMMEDIATELY - Firebase saves in background
+    prevTotalXP = 0; prevTotalCorrect = 0; prevTotalWrong = 0;
+    beginGame();
+
+    // Save to Firebase in background (non-blocking)
+    if(window._firebaseReady){
+      dbGet('students/'+safe).then(function(snap){
+        var existing=snap.val()||{};
+        prevTotalXP      = existing.totalXP      || 0;
+        prevTotalCorrect = existing.totalCorrect || 0;
+        prevTotalWrong   = existing.totalWrong   || 0;
+        dbUpdate('students/'+safe,{
+          name:name, difficulty:safeDiff, correct:0, wrong:0, xp:0,
+          totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
+          online:true, joinedAt:Date.now(), kicked:false
+        }).catch(function(e){console.warn('Firebase write:',e);});
+        dbOn('students/'+safe+'/kicked',function(snap){
+          if(snap.val()===true){
+            showToast('Du er fjernet fra spillet.','error');
+            setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
+          }
+        });
+      }).catch(function(e){console.warn('Firebase read:',e);});
+    }}
 
 // ── GAME START ─────────────────────────────────────────────────────────────────
 function beginGame(){

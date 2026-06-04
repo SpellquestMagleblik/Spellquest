@@ -398,6 +398,12 @@ function joinAsStudent(){
   currentPlayer=name;
   var safe=name.replace(/[.#$[\]]/g,'_');
   waitForFirebase(function(){
+    // Safety timeout – start game after 4s no matter what
+    var gameStarted = false;
+    var safetyTimer = setTimeout(function(){
+      if(!gameStarted){ gameStarted=true; beginGame(); }
+    }, 4000);
+
     // Load any existing accumulated data
     dbGet('students/'+safe).then(function(snap){
       var existing=snap.val()||{};
@@ -417,10 +423,11 @@ function joinAsStudent(){
           setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
         }
       });
-      beginGame();
+      if(!gameStarted){ clearTimeout(safetyTimer); gameStarted=true; beginGame(); }
     }).catch(function(e){
       console.error(e);
-      showToast('Fejl ved tilmelding: '+e.message,'error');
+      // Start game anyway even if Firebase fails
+      if(!gameStarted){ clearTimeout(safetyTimer); gameStarted=true; beginGame(); }
     });
   });
 }

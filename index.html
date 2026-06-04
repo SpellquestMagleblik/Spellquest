@@ -2498,35 +2498,43 @@ function joinAsStudent(){
   var name=document.getElementById('login-name').value.trim();
   if(!name){showToast('Skriv dit navn!','error');return;}
   currentPlayer=name;
+  isKicked=false; // Nulstil kicked-flag ved nyt login
   var safe='s_'+name.replace(/[.#$[\]]/g,'_');
   var safeDiff = currentDiff || 'easy';
 
-  // Start game IMMEDIATELY - no waiting for Firebase
   prevTotalXP = 0; prevTotalCorrect = 0; prevTotalWrong = 0;
-  beginGame();
 
-  // Save to Firebase in background (non-blocking, optional)
-  try {
-    if(window._firebaseReady){
-      dbGet('students/'+safe).then(function(snap){
-        var existing=snap.val()||{};
-        prevTotalXP      = existing.totalXP      || 0;
-        prevTotalCorrect = existing.totalCorrect || 0;
-        prevTotalWrong   = existing.totalWrong   || 0;
-        dbUpdate('students/'+safe,{
-          name:name, difficulty:safeDiff, correct:0, wrong:0, xp:0,
-          totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
-          online:true, joinedAt:Date.now(), kicked:false
-        }).catch(function(e){console.warn('Firebase write:',e);});
-        dbOn('students/'+safe+'/kicked',function(snap){
-          if(snap.val()===true){
-            showToast('Du er fjernet fra spillet.','error');
-            setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
-          }
-        });
-      }).catch(function(e){console.warn('Firebase read:',e);});
-    }
-  } catch(e){ console.warn('Firebase error:',e); }
+  // Hent eksisterende data FØR spillet starter så akkumulerede point er korrekte
+  function startWithData(){
+    dbGet('students/'+safe).then(function(snap){
+      var existing=snap.val()||{};
+      prevTotalXP      = existing.totalXP      || 0;
+      prevTotalCorrect = existing.totalCorrect || 0;
+      prevTotalWrong   = existing.totalWrong   || 0;
+      dbUpdate('students/'+safe,{
+        name:name, difficulty:safeDiff, correct:0, wrong:0, xp:0,
+        totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
+        online:true, joinedAt:Date.now(), kicked:false
+      }).catch(function(e){console.warn('Firebase write:',e);});
+      dbOn('students/'+safe+'/kicked',function(snap){
+        if(snap.val()===true){
+          isKicked=true;
+          showToast('Du er fjernet fra spillet.','error');
+          setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
+        }
+      });
+      beginGame();
+    }).catch(function(e){
+      console.warn('Firebase read fejl, starter uden data:',e);
+      beginGame();
+    });
+  }
+
+  if(window._firebaseReady){
+    startWithData();
+  } else {
+    document.addEventListener('firebaseReady', startWithData, {once:true});
+  }
 }
 
 // ── GAME START ─────────────────────────────────────────────────────────────────
@@ -2666,7 +2674,9 @@ function wordLost(){
 }
 function nextWord(){wordIndex++;loadWord();}
 
+var isKicked=false;
 function saveProgress(correct){
+  if(isKicked)return; // Stop hvis eleven er fjernet
   var safe=currentPlayer.replace(/[.#$[\]]/g,'_');
   var tXP=prevTotalXP+xp;
   var tC=prevTotalCorrect+scoreCorrect;
@@ -2805,23 +2815,19 @@ function confirmKick(){
   if(!kickTarget)return;
   var target=kickTarget;
   closeKickModal();
-  dbUpdate('students/'+target,{kicked:true}).then(function(){
-    setTimeout(function(){
-      dbRemove('students/'+target)
-        .then(function(){
-          showToast('Elev fjernet','success');
-          dbGet('students').then(function(snap){renderTeacherTable(snap.val()||{});});
-        })
-        .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
-    },1500);
-  }).catch(function(){
+  // Sæt kicked:true så elevens browser får besked og stopper med at skrive
+  dbUpdate('students/'+target,{kicked:true}).catch(function(){});
+  // Vent 2 sekunder så eleven kan reagere, slet derefter uanset hvad
+  setTimeout(function(){
     dbRemove('students/'+target)
       .then(function(){
         showToast('Elev fjernet','success');
-        dbGet('students').then(function(snap){renderTeacherTable(snap.val()||{});});
+        setTimeout(function(){
+          dbGet('students').then(function(snap){renderTeacherTable(snap.val()||{});});
+        },500);
       })
       .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
-  });
+  },2000);
 }
 </script>
 </body>

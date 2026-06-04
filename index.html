@@ -2512,7 +2512,7 @@ function joinAsStudent(){
       prevTotalCorrect = existing.totalCorrect || 0;
       prevTotalWrong   = existing.totalWrong   || 0;
       dbUpdate('students/'+safe,{
-        name:name, difficulty:safeDiff, correct:0, wrong:0, xp:0,
+        name:name, difficulty:safeDiff,
         totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
         online:true, joinedAt:Date.now(), kicked:false
       }).catch(function(e){console.warn('Firebase write:',e);});
@@ -2677,6 +2677,7 @@ function nextWord(){wordIndex++;loadWord();}
 var isKicked=false;
 function saveProgress(correct){
   if(isKicked)return; // Stop hvis eleven er fjernet
+  if(!currentPlayer)return;
   var safe=currentPlayer.replace(/[.#$[\]]/g,'_');
   var tXP=prevTotalXP+xp;
   var tC=prevTotalCorrect+scoreCorrect;
@@ -2685,7 +2686,7 @@ function saveProgress(correct){
     correct:scoreCorrect,wrong:scoreWrong,xp:xp,
     totalXP:tXP,totalCorrect:tC,totalWrong:tW,
     lastWord:currentWord.word,lastCorrect:correct,online:true
-  });
+  }).catch(function(e){console.warn('saveProgress fejl:',e);});
 }
 
 // ── END GAME ───────────────────────────────────────────────────────────────────

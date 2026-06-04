@@ -2808,12 +2808,18 @@ function confirmKick(){
   dbUpdate('students/'+target,{kicked:true}).then(function(){
     setTimeout(function(){
       dbRemove('students/'+target)
-        .then(function(){showToast('Elev fjernet','success');})
+        .then(function(){
+          showToast('Elev fjernet','success');
+          dbGet('students').then(function(snap){renderTeacherTable(snap.val()||{});});
+        })
         .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
     },1500);
   }).catch(function(){
     dbRemove('students/'+target)
-      .then(function(){showToast('Elev fjernet','success');})
+      .then(function(){
+        showToast('Elev fjernet','success');
+        dbGet('students').then(function(snap){renderTeacherTable(snap.val()||{});});
+      })
       .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
   });
 }

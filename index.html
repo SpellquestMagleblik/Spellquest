@@ -2678,7 +2678,7 @@ var isKicked=false;
 function saveProgress(correct){
   if(isKicked)return; // Stop hvis eleven er fjernet
   if(!currentPlayer)return;
-  var safe=currentPlayer.replace(/[.#$[\]]/g,'_');
+  var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
   var tXP=prevTotalXP+xp;
   var tC=prevTotalCorrect+scoreCorrect;
   var tW=prevTotalWrong+scoreWrong;
@@ -2711,7 +2711,7 @@ function endGame(){
   document.getElementById('result-title').textContent=title;
   document.getElementById('result-stars').textContent=pct>=90?'⭐⭐⭐':pct>=70?'⭐⭐':pct>=50?'⭐':'';
 
-  var safe=currentPlayer.replace(/[.#$[\]]/g,'_');
+  var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
   dbUpdate('students/'+safe,{online:false,finalPct:pct,done:true,totalXP:tXP,totalCorrect:tC,totalWrong:tW});
 
   prevTotalXP=tXP; prevTotalCorrect=tC; prevTotalWrong=tW;
@@ -2789,7 +2789,7 @@ function renderTeacherTable(data){
     var c=st.totalCorrect||st.correct||0,w=st.totalWrong||st.wrong||0,t=c+w;
     var pct=t>0?Math.round(c/t*100):0;
     var pc=pct>=70?'good':pct>=40?'medium':'bad';
-    var safe=st.name.replace(/[.#$[\]]/g,'_');
+    var safe='s_'+st.name.replace(/[.#$[\]]/g,'_');
     var dl={easy:'Let',medium:'Mellem',hard:'Svaer'}[st.difficulty]||'Let';
     var dot=st.online?'':'offline';
     var tXP=st.totalXP||st.xp||0;

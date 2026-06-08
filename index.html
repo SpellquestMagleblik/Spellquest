@@ -223,6 +223,7 @@ input:focus{border-color:var(--accent);}
         <div class="score-pill wrong">&#10007; <span id="score-wrong">0</span></div>
         <div class="xp-display">&#11088; <span id="score-xp">0</span> XP</div>
       </div>
+      <button class="btn btn-sm" style="background:none;border:1.5px solid rgba(231,76,60,.4);color:var(--accent2);font-size:.8rem;padding:6px 14px;" onclick="selfRemove()" title="Fjern dig fra pointtavlen">&#128465; Fjern mig</button>
     </div>
     <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
     <div class="game-columns">
@@ -344,7 +345,7 @@ async function checkPassword(pw){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') === TEACHER_HASH;
 }
-const WORDS_PER_ROUND  = 20;
+const WORDS_PER_ROUND  = Infinity;
 const MAX_WRONG        = 6;
 const HM_PARTS = ['hm-head','hm-body','hm-arm-l','hm-arm-r','hm-leg-l','hm-leg-r'];
 
@@ -2465,7 +2466,8 @@ var prevTotalXP=0, prevTotalCorrect=0, prevTotalWrong=0;
 function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById(id).classList.add('active');}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(function(){t.className='toast';},2600);}
 function showFeedback(msg,type){var o=document.getElementById('feedback-overlay'),m=document.getElementById('feedback-msg');m.textContent=msg;m.className='feedback-msg '+(type||'');o.classList.add('show');setTimeout(function(){o.classList.remove('show');},950);}
-function getRandWords(diff,count){var pool=WORDS[diff].slice();for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}return pool.slice(0,count);}
+function shuffleArray(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function getRandWords(diff,count){return shuffleArray(WORDS[diff]);}
 function selectDiff(d){currentDiff=d;document.querySelectorAll('.diff-btn').forEach(function(b){b.classList.toggle('selected',b.dataset.diff===d);});}
 function escHtml(s){return s.replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function waitForFirebase(cb){if(window._firebaseReady){cb();return;}document.addEventListener('firebaseReady',cb,{once:true});}
@@ -2556,18 +2558,24 @@ function beginGame(){
 
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────
 function loadWord(){
-  if(wordIndex>=playerWords.length){endGame();return;}
+  if(wordIndex>=playerWords.length){
+    // Pool exhausted – reshuffle and continue forever
+    playerWords=shuffleArray(WORDS[currentDiff]);
+    wordIndex=0;
+  }
   currentWord=playerWords[wordIndex];
   guessedLetters=new Set();
   wrongGuesses=0; wordLocked=false;
   revealedSlots=new Array(currentWord.word.length).fill(false);
-  document.getElementById('progress-bar').style.width=(wordIndex/playerWords.length*100)+'%';
+  var total=scoreCorrect+scoreWrong;
+  var pctSoFar=total>0?Math.round(scoreCorrect/total*100):100;
+  document.getElementById('progress-bar').style.width=pctSoFar+'%';
   document.getElementById('hint-text').textContent=currentWord.hint;
   document.getElementById('hint-translation').textContent='DK: '+currentWord.da;
   document.getElementById('score-correct').textContent=scoreCorrect;
   document.getElementById('score-wrong').textContent=scoreWrong;
   document.getElementById('score-xp').textContent=prevTotalXP+xp;
-  document.getElementById('word-progress-label').textContent='Ord '+(wordIndex+1)+' af '+WORDS_PER_ROUND;
+  document.getElementById('word-progress-label').textContent='Ord #'+(scoreCorrect+scoreWrong+1)+' – Rigtige: '+scoreCorrect+' | Forkerte: '+scoreWrong;
   resetHangman(); renderSlots(); renderKeyboard();
   document.getElementById('wrong-letters').textContent='Forkerte: -';
 }
@@ -2721,6 +2729,16 @@ function endGame(){
   } else {
     showScreen('screen-result');
   }
+}
+function selfRemove(){
+  if(!currentPlayer)return;
+  if(!confirm('Er du sikker på, at du vil fjerne dig selv fra pointtavlen?'))return;
+  var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
+  isKicked=true;
+  dbRemove('students/'+safe).then(function(){
+    showToast('Du er fjernet fra pointtavlen.','success');
+    setTimeout(function(){showScreen('screen-login');document.getElementById('login-name').value=currentPlayer||'';},1800);
+  }).catch(function(){showToast('Fejl – prøv igen.','error');});
 }
 function playAgain(){showScreen('screen-login');document.getElementById('login-name').value=currentPlayer||'';}
 

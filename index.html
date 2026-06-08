@@ -263,6 +263,7 @@ input:focus{border-color:var(--accent);}
           <div class="hint-translation" id="hint-translation"></div>
           <div class="letter-slots" id="letter-slots"></div>
           <div style="margin-top:10px;font-size:.8rem;color:var(--text2);font-weight:600" id="word-progress-label"></div>
+          <button id="rescue-btn" onclick="rescueWord()" style="display:none;margin-top:12px;width:100%;padding:10px;background:rgba(247,201,72,.12);border:1.5px solid var(--accent);border-radius:10px;color:var(--accent);font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;">&#9654; Næste ord (siden frøs – tryk her)</button>
         </div>
         <div class="keyboard" id="keyboard"></div>
       </div>
@@ -2558,6 +2559,7 @@ function beginGame(){
 
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────
 function loadWord(){
+  _clearFreezeTimer();
   if(wordIndex>=playerWords.length){
     // Pool exhausted – reshuffle and continue forever
     playerWords=shuffleArray(WORDS[currentDiff]);
@@ -2663,6 +2665,7 @@ function guessLetter(letter){
 // ── OUTCOME ────────────────────────────────────────────────────────────────────
 function wordWon(){
   wordLocked=true;
+  _startFreezeTimer();
   scoreCorrect++;
   xp+=currentDiff==='easy'?10:currentDiff==='medium'?20:30;
   showFeedback('Rigtigt!','success');
@@ -2671,6 +2674,7 @@ function wordWon(){
 }
 function wordLost(){
   wordLocked=true;
+  _startFreezeTimer();
   scoreWrong++;
   for(var i=0;i<currentWord.word.length;i++)revealedSlots[i]=true;
   renderSlots();
@@ -2683,6 +2687,10 @@ function wordLost(){
 function nextWord(){wordIndex++;loadWord();}
 
 var isKicked=false;
+var _freezeTimer=null;
+function _clearFreezeTimer(){if(_freezeTimer){clearTimeout(_freezeTimer);_freezeTimer=null;}var rb=document.getElementById('rescue-btn');if(rb)rb.style.display='none';}
+function _startFreezeTimer(){_clearFreezeTimer();_freezeTimer=setTimeout(function(){var rb=document.getElementById('rescue-btn');if(rb&&wordLocked)rb.style.display='block';},3500);}
+function rescueWord(){_clearFreezeTimer();wordLocked=false;wordIndex++;loadWord();}
 function saveProgress(correct){
   if(isKicked)return; // Stop hvis eleven er fjernet
   if(!currentPlayer)return;

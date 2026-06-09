@@ -2594,20 +2594,9 @@ function joinAsStudent(){
       prevTotalXP      = existing.totalXP      || 0;
       prevTotalCorrect = existing.totalCorrect || 0;
       prevTotalWrong   = existing.totalWrong   || 0;
-      // Hvis siden frøs midt i en session, kan 'correct' og 'wrong' være højere
-      // end hvad der nåede at blive lagt til totalerne — tilføj dem her
-      var sessionCorrect = existing.correct || 0;
-      var sessionWrong   = existing.wrong   || 0;
-      // Kun tilføj hvis det ikke allerede er talt med (totalCorrect > 0 og session > 0)
-      if(sessionCorrect > 0 || sessionWrong > 0){
-        prevTotalCorrect += sessionCorrect;
-        prevTotalWrong   += sessionWrong;
-        prevTotalXP      += existing.xp || 0;
-      }
       dbUpdate('students/'+safe,{
         name:name, difficulty:safeDiff,
         totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
-        correct:0, wrong:0, xp:0,
         online:true, joinedAt:Date.now(), kicked:false
       }).catch(function(e){console.warn('Firebase write:',e);});
       dbOn('students/'+safe+'/kicked',function(snap){
@@ -3043,6 +3032,11 @@ function changeDiff(d){
   wordIndex=0;
   _updateDiffBtns();
   showToast({easy:'Let tilstand 🟢',medium:'Mellem tilstand 🟡',hard:'Svær tilstand 🔴'}[d],'success');
+  // Gem ny sværhedsgrad til Firebase med det samme
+  if(currentPlayer){
+    var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
+    dbUpdate('students/'+safe,{difficulty:d}).catch(function(e){console.warn('changeDiff fejl:',e);});
+  }
   loadWord();
 }
 function selfRemove(){

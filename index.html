@@ -269,6 +269,7 @@ input:focus{border-color:var(--accent);}
           <div class="letter-slots" id="letter-slots"></div>
           <div style="margin-top:10px;font-size:.8rem;color:var(--text2);font-weight:600" id="word-progress-label"></div>
           <button id="rescue-btn" onclick="rescueWord()" style="display:none;margin-top:12px;width:100%;padding:10px;background:rgba(247,201,72,.12);border:1.5px solid var(--accent);border-radius:10px;color:var(--accent);font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;">&#9654; Næste ord (siden frøs – tryk her)</button>
+          <button id="hint-btn" onclick="useHint()" style="display:none;margin-top:8px;width:100%;padding:10px;background:rgba(78,205,196,.1);border:1.5px solid #4ecdc4;border-radius:10px;color:#4ecdc4;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;">&#128161; Hint – afslør 2 bogstaver (-200 XP)</button>
         </div>
         <div class="keyboard" id="keyboard"></div>
       </div>
@@ -2466,6 +2467,7 @@ var currentPlayer='', currentDiff='easy', currentWord=null;
 var guessedLetters=new Set(), wrongGuesses=0, revealedSlots=[];
 var playerWords=[], wordIndex=0, scoreCorrect=0, scoreWrong=0, xp=0;
 var wordLocked=false, kickTarget=null, studentListener=null;
+var hintUsed=false;
 var prevTotalXP=0, prevTotalCorrect=0, prevTotalWrong=0;
 
 // ── UTILS ──────────────────────────────────────────────────────────────────────
@@ -2573,8 +2575,9 @@ function loadWord(){
   }
   currentWord=playerWords[wordIndex];
   guessedLetters=new Set();
-  wrongGuesses=0; wordLocked=false;
+  wrongGuesses=0; wordLocked=false; hintUsed=false;
   revealedSlots=new Array(currentWord.word.length).fill(false);
+  var hb=document.getElementById('hint-btn');if(hb)hb.style.display='none';
   var total=scoreCorrect+scoreWrong;
   var pctSoFar=total>0?Math.round(scoreCorrect/total*100):100;
   document.getElementById('progress-bar').style.width=pctSoFar+'%';
@@ -2660,6 +2663,8 @@ function guessLetter(letter){
   } else {
     wrongGuesses++;
     updateHangman();
+    var hb=document.getElementById('hint-btn');
+    if(hb&&wrongGuesses>=3&&!hintUsed)hb.style.display='block';
     document.querySelectorAll('.letter-slot').forEach(function(s){s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');});
     var wrongs=[...guessedLetters].filter(function(l){return word.indexOf(l)<0;}).join('  ');
     document.getElementById('wrong-letters').textContent='Forkerte: '+(wrongs||'-');
@@ -2696,6 +2701,33 @@ var isKicked=false;
 var _freezeTimer=null;
 function _clearFreezeTimer(){if(_freezeTimer){clearTimeout(_freezeTimer);_freezeTimer=null;}var rb=document.getElementById('rescue-btn');if(rb)rb.style.display='none';}
 function _startFreezeTimer(){_clearFreezeTimer();_freezeTimer=setTimeout(function(){var rb=document.getElementById('rescue-btn');if(rb&&wordLocked)rb.style.display='block';},3500);}
+function useHint(){
+  if(hintUsed||wordLocked)return;
+  hintUsed=true;
+  var hb=document.getElementById('hint-btn');if(hb)hb.style.display='none';
+  // Find skjulte slots
+  var word=currentWord.word.toUpperCase();
+  var hidden=[];
+  for(var i=0;i<word.length;i++){if(!revealedSlots[i])hidden.push(i);}
+  // Shuffle og afslør op til 2
+  hidden=shuffleArray(hidden).slice(0,2);
+  hidden.forEach(function(i){
+    revealedSlots[i]=true;
+    guessedLetters.add(word[i]); // marker bogstavet som gættet
+  });
+  renderSlots();
+  renderKeyboard();
+  // XP straf – minimum 0
+  var penalty=Math.min(200, prevTotalXP+xp);
+  if(penalty>0){
+    xp-=penalty;
+    if(xp<0){prevTotalXP+=xp;xp=0;} // lad det gå ind i total hvis xp går negativ
+    document.getElementById('score-xp').textContent=prevTotalXP+xp;
+  }
+  showToast('Hint brugt! -200 XP','error');
+  // Tjek om ordet er løst efter hint
+  if(revealedSlots.every(function(v){return v;}))wordWon();
+}
 function rescueWord(){_clearFreezeTimer();wordLocked=false;wordIndex++;loadWord();}
 function saveProgress(correct){
   if(isKicked)return; // Stop hvis eleven er fjernet

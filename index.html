@@ -2741,6 +2741,14 @@ function guessLetter(letter){
   } else {
     wrongGuesses++;
     updateHangman();
+    // -10 XP per forkert bogstav (minimum 0)
+    var penalty10=Math.min(10,prevTotalXP+xp);
+    if(penalty10>0){
+      xp-=penalty10;
+      if(xp<0){prevTotalXP+=xp;xp=0;}
+      document.getElementById('score-xp').textContent=prevTotalXP+xp;
+      saveProgress(null);
+    }
     var hb=document.getElementById('hint-btn');
     if(hb&&wrongGuesses>=3&&!hintUsed)hb.style.display='block';
     document.querySelectorAll('.letter-slot').forEach(function(s){s.classList.remove('shake');void s.offsetWidth;s.classList.add('shake');});
@@ -2768,11 +2776,18 @@ function wordLost(){
   _startFreezeTimer();
   var row=document.getElementById('powerup-row');if(row)row.style.display='none';
   scoreWrong++;
+  // -30 XP for hele ordet tabt (minimum 0)
+  var penalty30=Math.min(30,prevTotalXP+xp);
+  if(penalty30>0){
+    xp-=penalty30;
+    if(xp<0){prevTotalXP+=xp;xp=0;}
+    document.getElementById('score-xp').textContent=prevTotalXP+xp;
+  }
   for(var i=0;i<currentWord.word.length;i++)revealedSlots[i]=true;
   renderSlots();
   document.querySelectorAll('.letter-slot').forEach(function(s){s.classList.add('wrong-reveal');});
   showFeedback(currentWord.word.toUpperCase(),'fail');
-  showToast('Ordet var: '+currentWord.word.toUpperCase(),'error');
+  showToast('Ordet var: '+currentWord.word.toUpperCase()+' (-30 XP)','error');
   saveProgress(false);
   setTimeout(nextWord,1600);
 }

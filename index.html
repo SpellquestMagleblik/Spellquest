@@ -80,6 +80,12 @@ input:focus{border-color:var(--accent);}
 .life-heart{transition:all .3s;}
 .life-heart.lost{filter:grayscale(1);opacity:.35;transform:scale(.85);}
 .wrong-letters{margin-top:12px;min-height:28px;font-size:.8rem;font-weight:800;color:var(--accent2);letter-spacing:2px;text-transform:uppercase;}
+/* Klassebarometer */
+.class-bar-wrap{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);}
+.class-bar-label{font-size:.65rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;text-align:center;}
+.class-bar-track{width:100%;height:8px;background:var(--surface2);border-radius:50px;overflow:hidden;margin-bottom:5px;}
+.class-bar-fill{height:100%;background:linear-gradient(90deg,#a29bfe,#4ecdc4);border-radius:50px;transition:width .6s ease;}
+.class-bar-count{font-size:.68rem;font-weight:700;color:var(--text2);text-align:center;}
 /* Word area */
 .word-display-card{background:var(--surface);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px 20px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden;}
 .word-display-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(247,201,72,.05) 0%,transparent 70%);pointer-events:none;}
@@ -168,34 +174,6 @@ input:focus{border-color:var(--accent);}
   .letter-slot{width:36px;height:44px;font-size:1.2rem;}
   .key{min-width:30px;height:42px;font-size:.85rem;}
 }
-/* Level panel */
-.game-outer{display:flex;gap:20px;align-items:flex-start;width:100%;max-width:1120px;}
-.game-wrap{flex:1;min-width:0;max-width:860px;}
-.level-panel{width:200px;flex-shrink:0;background:var(--surface);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px 16px;box-shadow:var(--shadow);position:sticky;top:20px;}
-.level-panel-title{font-size:.7rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--text2);margin-bottom:14px;text-align:center;}
-#level-current-box{text-align:center;}
-.level-badge-big{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#e8a800);color:#1a1200;font-family:'Fredoka One',cursive;font-size:1.6rem;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;box-shadow:0 0 16px rgba(247,201,72,.4);transition:all .4s;}
-.level-title-big{font-family:'Fredoka One',cursive;font-size:1rem;color:var(--accent);margin-bottom:4px;}
-.level-xp-label{font-size:.75rem;font-weight:700;color:var(--text2);margin-bottom:8px;}
-.lp-bar-wrap{width:100%;background:var(--surface2);border-radius:50px;height:7px;overflow:hidden;margin-bottom:4px;}
-.lp-bar{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent));border-radius:50px;transition:width .6s ease;}
-.lp-next-label{font-size:.7rem;color:var(--text2);font-weight:600;}
-.lp-divider{border:none;border-top:1px solid rgba(255,255,255,.07);margin:14px 0;}
-.lp-ladder{display:flex;flex-direction:column;gap:8px;}
-.lp-rung{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;transition:background .2s;}
-.lp-rung.reached{background:rgba(247,201,72,.08);}
-.lp-rung.current{background:rgba(247,201,72,.18);outline:1.5px solid rgba(247,201,72,.4);}
-.lp-rung-num{width:24px;height:24px;border-radius:50%;background:var(--surface2);font-family:'Fredoka One',cursive;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2);}
-.lp-rung.reached .lp-rung-num{background:rgba(247,201,72,.25);color:var(--accent);}
-.lp-rung.current .lp-rung-num{background:var(--accent);color:#1a1200;}
-.lp-rung-info{min-width:0;}
-.lp-rung-name{font-size:.72rem;font-weight:800;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.lp-rung.reached .lp-rung-name,.lp-rung.current .lp-rung-name{color:var(--accent);}
-.lp-rung-xp{font-size:.65rem;color:var(--text2);font-weight:600;}
-@keyframes levelup{0%{transform:scale(1);}30%{transform:scale(1.35);}60%{transform:scale(.92);}100%{transform:scale(1);}}
-.levelup-anim{animation:levelup .5s ease;}
-@media(max-width:900px){.level-panel{display:none;}}
-
 </style>
 </head>
 <body>
@@ -243,7 +221,6 @@ input:focus{border-color:var(--accent);}
 
 <!-- GAME -->
 <div class="screen" id="screen-game">
-  <div class="game-outer">
   <div class="game-wrap">
     <div class="game-header">
       <div class="player-tag">&#128100; <span id="game-player-name"></span></div>
@@ -288,6 +265,12 @@ input:focus{border-color:var(--accent);}
           <span class="life-heart">&#10084;&#65039;</span><span class="life-heart">&#10084;&#65039;</span>
         </div>
         <div class="wrong-letters" id="wrong-letters">Forkerte: -</div>
+        <!-- Klassebarometer -->
+        <div class="class-bar-wrap" id="class-bar-wrap">
+          <div class="class-bar-label">🏫 Klassens mål</div>
+          <div class="class-bar-track"><div class="class-bar-fill" id="class-bar-fill" style="width:0%"></div></div>
+          <div class="class-bar-count"><span id="class-bar-num">0</span> / 500 rigtige</div>
+        </div>
       </div>
       <!-- Word + keyboard -->
       <div>
@@ -303,23 +286,7 @@ input:focus{border-color:var(--accent);}
         <div class="keyboard" id="keyboard"></div>
       </div>
     </div>
-  </div><!-- /game-wrap -->
-
-  <!-- LEVEL SIDEBAR -->
-  <div class="level-panel" id="level-panel">
-    <div class="level-panel-title">&#127942; Niveauer</div>
-    <div id="level-current-box">
-      <div class="level-badge-big" id="lp-badge">1</div>
-      <div class="level-title-big" id="lp-title">Begynder</div>
-      <div class="level-xp-label" id="lp-xp-label">0 XP</div>
-      <div class="lp-bar-wrap"><div class="lp-bar" id="lp-bar" style="width:0%"></div></div>
-      <div class="lp-next-label" id="lp-next-label">Næste: 1000 XP</div>
-    </div>
-    <div class="lp-divider"></div>
-    <div class="lp-ladder" id="lp-ladder"></div>
   </div>
-
-  </div><!-- /game-outer -->
 </div>
 
 <!-- RESULT -->
@@ -2575,7 +2542,7 @@ function joinAsStudent(){
         if(snap.val()===true){
           isKicked=true;
           showToast('Du er fjernet fra spillet.','error');
-          setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
+          setTimeout(function(){dbRemove('students/'+safe);maybeResetClassBar();showScreen('screen-login');},2000);
         }
       });
       beginGame();
@@ -2605,6 +2572,7 @@ function beginGame(){
     wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0;
     document.getElementById('game-player-name').textContent=currentPlayer;
     _updateDiffBtns();
+    startClassBarListener();
     showScreen('screen-game');
     loadWord();
   },1400);
@@ -2634,7 +2602,6 @@ function loadWord(){
   document.getElementById('word-progress-label').textContent='Ord #'+(scoreCorrect+scoreWrong+1)+' – Rigtige: '+scoreCorrect+' | Forkerte: '+scoreWrong;
   resetHangman(); renderSlots(); renderKeyboard();
   document.getElementById('wrong-letters').textContent='Forkerte: -';
-  updateLevelUI();
 }
 
 // ── HANGMAN ────────────────────────────────────────────────────────────────────
@@ -2724,6 +2691,7 @@ function wordWon(){
   wordLocked=true;
   _startFreezeTimer();
   scoreCorrect++;
+  incrementClassBar();
   xp+=currentDiff==='easy'?10:currentDiff==='medium'?20:30;
   showFeedback('Rigtigt!','success');
   saveProgress(true);
@@ -2744,59 +2712,41 @@ function wordLost(){
 function nextWord(){wordIndex++;loadWord();}
 
 var isKicked=false;
-// ── LEVEL SYSTEM ───────────────────────────────────────────────────────────────
-var LEVELS=[
-  {lvl:1,title:'Begynder',   min:0,    max:1000},
-  {lvl:2,title:'Den Lærde',  min:1000, max:2000},
-  {lvl:3,title:'Stavemester',min:2000, max:3000},
-  {lvl:4,title:'Ordtroldmand',min:3000,max:4000},
-  {lvl:5,title:'Den Vise',   min:4000, max:5000},
-  {lvl:6,title:'Verdensmester',min:5000,max:Infinity}
-];
-function getLevel(totalXP){
-  for(var i=LEVELS.length-1;i>=0;i--){if(totalXP>=LEVELS[i].min)return LEVELS[i];}
-  return LEVELS[0];
+// ── KLASSEBAROMETER ────────────────────────────────────────────────────────────
+var CLASS_GOAL=500;
+var _classBarUnsub=null;
+function startClassBarListener(){
+  if(_classBarUnsub)_classBarUnsub();
+  var r=window._ref(window._db,'classbar/correct');
+  _classBarUnsub=window._onValue(r,function(snap){
+    var n=snap.val()||0;
+    var pct=Math.min(100,Math.round(n/CLASS_GOAL*100));
+    var fill=document.getElementById('class-bar-fill');
+    var num=document.getElementById('class-bar-num');
+    if(fill)fill.style.width=pct+'%';
+    if(num)num.textContent=n;
+    // Skift farve til guld når mål nået
+    if(fill)fill.style.background=n>=CLASS_GOAL?'linear-gradient(90deg,#f7c948,#e8a800)':'linear-gradient(90deg,#a29bfe,#4ecdc4)';
+  });
 }
-var _lastLvl=1;
-function updateLevelUI(){
-  var totalXP=prevTotalXP+xp;
-  var lv=getLevel(totalXP);
-  var badge=document.getElementById('lp-badge');
-  var oldLvl=_lastLvl;
-  if(badge){
-    badge.textContent=lv.lvl;
-    if(lv.lvl>oldLvl){
-      badge.classList.remove('levelup-anim');
-      void badge.offsetWidth;
-      badge.classList.add('levelup-anim');
-      showToast('🎉 Niveau '+lv.lvl+' – '+lv.title+'!','success');
+function incrementClassBar(){
+  if(isKicked)return;
+  var r=window._ref(window._db,'classbar/correct');
+  window._get(r).then(function(snap){
+    var cur=snap.val()||0;
+    window._set(r,cur+1);
+  }).catch(function(){});
+}
+function maybeResetClassBar(){
+  // Nulstil barometeret hvis der ikke er nogen elever tilbage
+  var sr=window._ref(window._db,'students');
+  window._get(sr).then(function(snap){
+    var data=snap.val()||{};
+    var alive=Object.values(data).filter(function(v){return v&&v.name;});
+    if(alive.length===0){
+      window._set(window._ref(window._db,'classbar/correct'),0);
     }
-  }
-  _lastLvl=lv.lvl;
-  var el=document.getElementById('lp-title');if(el)el.textContent=lv.title;
-  var ex=document.getElementById('lp-xp-label');if(ex)ex.textContent=totalXP+' XP i alt';
-  var bar=document.getElementById('lp-bar');
-  var nextEl=document.getElementById('lp-next-label');
-  if(lv.max===Infinity){
-    if(bar)bar.style.width='100%';
-    if(nextEl)nextEl.textContent='Maks niveau nået! 🏆';
-  } else {
-    var pct=Math.min(100,Math.round((totalXP-lv.min)/(lv.max-lv.min)*100));
-    if(bar)bar.style.width=pct+'%';
-    if(nextEl)nextEl.textContent='Næste: '+(lv.max-totalXP)+' XP';
-  }
-  // Build ladder
-  var ladder=document.getElementById('lp-ladder');
-  if(ladder){
-    ladder.innerHTML='';
-    LEVELS.forEach(function(l){
-      var rung=document.createElement('div');
-      rung.className='lp-rung'+(totalXP>=l.min?' reached':'')+(l.lvl===lv.lvl?' current':'');
-      var xpLabel=l.max===Infinity?'5000+ XP':l.min+' XP';
-      rung.innerHTML='<div class="lp-rung-num">'+l.lvl+'</div><div class="lp-rung-info"><div class="lp-rung-name">'+l.title+'</div><div class="lp-rung-xp">'+xpLabel+'</div></div>';
-      ladder.appendChild(rung);
-    });
-  }
+  }).catch(function(){});
 }
 var _freezeTimer=null;
 function _clearFreezeTimer(){if(_freezeTimer){clearTimeout(_freezeTimer);_freezeTimer=null;}var rb=document.getElementById('rescue-btn');if(rb)rb.style.display='none';}
@@ -2841,7 +2791,6 @@ function saveProgress(correct){
     totalXP:tXP,totalCorrect:tC,totalWrong:tW,
     lastWord:currentWord.word,lastCorrect:correct,online:true
   }).catch(function(e){console.warn('saveProgress fejl:',e);});
-  updateLevelUI();
 }
 
 // ── END GAME ───────────────────────────────────────────────────────────────────
@@ -2901,6 +2850,7 @@ function selfRemove(){
   var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
   isKicked=true;
   dbRemove('students/'+safe).then(function(){
+    maybeResetClassBar();
     showToast('Du er fjernet fra pointtavlen.','success');
     setTimeout(function(){showScreen('screen-login');document.getElementById('login-name').value=currentPlayer||'';},1800);
   }).catch(function(){showToast('Fejl – prøv igen.','error');});

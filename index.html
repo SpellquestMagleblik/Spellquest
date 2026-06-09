@@ -2887,6 +2887,7 @@ function useHint(){
     document.getElementById('score-xp').textContent=prevTotalXP+xp;
   }
   showToast('Hint brugt! -200 XP','error');
+  saveXP();
   // Tjek om ordet er løst efter hint
   if(revealedSlots.every(function(v){return v;}))wordWon();
 }
@@ -2944,8 +2945,8 @@ function buyPowerup(type){
   }
   updatePowerupUI();
   updateLevelUI();
-}
-function rescueWord(){_clearFreezeTimer();wordLocked=false;wordIndex++;loadWord();}
+  saveXP();
+}_clearFreezeTimer();wordLocked=false;wordIndex++;loadWord();}
 function saveProgress(correct){
   if(isKicked)return; // Stop hvis eleven er fjernet
   if(!currentPlayer)return;
@@ -2960,6 +2961,11 @@ function saveProgress(correct){
   }).catch(function(e){console.warn('saveProgress fejl:',e);});
   updateLevelUI();
   updatePowerupUI();
+}
+function saveXP(){
+  if(isKicked||!currentPlayer)return;
+  var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
+  dbUpdate('students/'+safe,{xp:xp,totalXP:prevTotalXP+xp}).catch(function(){});
 }
 
 // ── END GAME ───────────────────────────────────────────────────────────────────

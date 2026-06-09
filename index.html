@@ -86,6 +86,12 @@ input:focus{border-color:var(--accent);}
 .pu-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
 .pu-btn.used{border-color:rgba(255,255,255,.06)!important;color:var(--text2)!important;background:none!important;cursor:not-allowed;transform:none!important;}
 .pu-cost{font-size:.65rem;font-weight:700;color:var(--accent);display:block;}
+/* Klassebarometer */
+.class-bar-wrap{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);}
+.class-bar-label{font-size:.65rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:6px;text-align:center;}
+.class-bar-track{width:100%;height:8px;background:var(--surface2);border-radius:50px;overflow:hidden;margin-bottom:5px;}
+.class-bar-fill{height:100%;background:linear-gradient(90deg,#a29bfe,#4ecdc4);border-radius:50px;transition:width .6s ease;}
+.class-bar-count{font-size:.68rem;font-weight:700;color:var(--text2);text-align:center;}
 /* Word area */
 .word-display-card{background:var(--surface);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:24px 20px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden;}
 .word-display-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(247,201,72,.05) 0%,transparent 70%);pointer-events:none;}
@@ -294,6 +300,12 @@ input:focus{border-color:var(--accent);}
           <span class="life-heart">&#10084;&#65039;</span><span class="life-heart">&#10084;&#65039;</span>
         </div>
         <div class="wrong-letters" id="wrong-letters">Forkerte: -</div>
+        <!-- Klassebarometer -->
+        <div class="class-bar-wrap" id="class-bar-wrap">
+          <div class="class-bar-label">🏫 Klassens mål</div>
+          <div class="class-bar-track"><div class="class-bar-fill" id="class-bar-fill" style="width:0%"></div></div>
+          <div class="class-bar-count"><span id="class-bar-num">0</span> / 500 rigtige</div>
+        </div>
       </div>
       <!-- Word + keyboard -->
       <div>
@@ -2591,7 +2603,7 @@ function joinAsStudent(){
         if(snap.val()===true){
           isKicked=true;
           showToast('Du er fjernet fra spillet.','error');
-          setTimeout(function(){dbRemove('students/'+safe);showScreen('screen-login');},2000);
+          setTimeout(function(){dbRemove('students/'+safe);maybeResetClassBar();showScreen('screen-login');},2000);
         }
       });
       beginGame();
@@ -2622,6 +2634,7 @@ function beginGame(){
     puUsed={first:false,last:false,life:false};
     document.getElementById('game-player-name').textContent=currentPlayer;
     _updateDiffBtns();
+    startClassBarListener();
     showScreen('screen-game');
     loadWord();
   },1400);
@@ -2744,6 +2757,7 @@ function wordWon(){
   _startFreezeTimer();
   var row=document.getElementById('powerup-row');if(row)row.style.display='none';
   scoreCorrect++;
+  incrementClassBar();
   xp+=currentDiff==='easy'?10:currentDiff==='medium'?20:30;
   showFeedback('Rigtigt!','success');
   saveProgress(true);
@@ -2765,6 +2779,33 @@ function wordLost(){
 function nextWord(){wordIndex++;loadWord();}
 
 var isKicked=false;
+// ── KLASSEBAROMETER ────────────────────────────────────────────────────────────
+var CLASS_GOAL=500;
+var _classBarUnsub=null;
+function startClassBarListener(){
+  if(_classBarUnsub)_classBarUnsub();
+  var r=window._ref(window._db,'classbar/correct');
+  _classBarUnsub=window._onValue(r,function(snap){
+    var n=snap.val()||0;
+    var pct=Math.min(100,Math.round(n/CLASS_GOAL*100));
+    var fill=document.getElementById('class-bar-fill');
+    var num=document.getElementById('class-bar-num');
+    if(fill){fill.style.width=pct+'%';fill.style.background=n>=CLASS_GOAL?'linear-gradient(90deg,#f7c948,#e8a800)':'linear-gradient(90deg,#a29bfe,#4ecdc4)';}
+    if(num)num.textContent=n;
+  });
+}
+function incrementClassBar(){
+  if(isKicked)return;
+  var r=window._ref(window._db,'classbar/correct');
+  window._get(r).then(function(snap){window._set(r,(snap.val()||0)+1);}).catch(function(){});
+}
+function maybeResetClassBar(){
+  var sr=window._ref(window._db,'students');
+  window._get(sr).then(function(snap){
+    var alive=Object.values(snap.val()||{}).filter(function(v){return v&&v.name;});
+    if(alive.length===0)window._set(window._ref(window._db,'classbar/correct'),0);
+  }).catch(function(){});
+}
 // ── LEVEL SYSTEM ───────────────────────────────────────────────────────────────
 var LEVELS=[
   {lvl:1,title:'Begynder',   min:0,    max:1000},
@@ -2978,6 +3019,7 @@ function selfRemove(){
   var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
   isKicked=true;
   dbRemove('students/'+safe).then(function(){
+    maybeResetClassBar();
     showToast('Du er fjernet fra pointtavlen.','success');
     setTimeout(function(){showScreen('screen-login');document.getElementById('login-name').value=currentPlayer||'';},1800);
   }).catch(function(){showToast('Fejl – prøv igen.','error');});

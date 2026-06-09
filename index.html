@@ -2594,9 +2594,20 @@ function joinAsStudent(){
       prevTotalXP      = existing.totalXP      || 0;
       prevTotalCorrect = existing.totalCorrect || 0;
       prevTotalWrong   = existing.totalWrong   || 0;
+      // Hvis siden frøs midt i en session, kan 'correct'/'wrong'/'xp' indeholde
+      // fremskridt der aldrig nåede at blive lagt til totalerne — redder dem her
+      var sessionCorrect = existing.correct || 0;
+      var sessionWrong   = existing.wrong   || 0;
+      var sessionXP      = existing.xp      || 0;
+      if(sessionCorrect > 0 || sessionWrong > 0){
+        prevTotalCorrect += sessionCorrect;
+        prevTotalWrong   += sessionWrong;
+        prevTotalXP      += sessionXP;
+      }
       dbUpdate('students/'+safe,{
         name:name, difficulty:safeDiff,
         totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
+        correct:0, wrong:0, xp:0,
         online:true, joinedAt:Date.now(), kicked:false
       }).catch(function(e){console.warn('Firebase write:',e);});
       dbOn('students/'+safe+'/kicked',function(snap){
@@ -2975,7 +2986,8 @@ function saveProgress(correct){
   var update={
     correct:scoreCorrect,wrong:scoreWrong,xp:xp,
     totalXP:tXP,totalCorrect:tC,totalWrong:tW,
-    lastWord:currentWord?currentWord.word:'',online:true
+    lastWord:currentWord?currentWord.word:'',online:true,
+    difficulty:currentDiff||'easy'
   };
   if(correct!==null)update.lastCorrect=correct;
   dbUpdate('students/'+safe,update).catch(function(e){console.warn('saveProgress fejl:',e);});
@@ -3026,13 +3038,12 @@ function _updateDiffBtns(){
 }
 function changeDiff(d){
   if(d===currentDiff)return;
-  if(wordLocked)return; // mid-transition, ignore
+  if(wordLocked)return;
   currentDiff=d;
   playerWords=shuffleArray(WORDS[d]);
   wordIndex=0;
   _updateDiffBtns();
   showToast({easy:'Let tilstand 🟢',medium:'Mellem tilstand 🟡',hard:'Svær tilstand 🔴'}[d],'success');
-  // Gem ny sværhedsgrad til Firebase med det samme
   if(currentPlayer){
     var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
     dbUpdate('students/'+safe,{difficulty:d}).catch(function(e){console.warn('changeDiff fejl:',e);});

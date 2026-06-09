@@ -223,6 +223,11 @@ input:focus{border-color:var(--accent);}
         <div class="score-pill wrong">&#10007; <span id="score-wrong">0</span></div>
         <div class="xp-display">&#11088; <span id="score-xp">0</span> XP</div>
       </div>
+      <div id="ingame-diff-btns" style="display:flex;gap:5px;">
+        <button onclick="changeDiff('easy')"   id="idb-easy"   style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #4ecdc4;background:none;color:#4ecdc4;cursor:pointer;">Let</button>
+        <button onclick="changeDiff('medium')" id="idb-medium" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #f7c948;background:none;color:#f7c948;cursor:pointer;">Mellem</button>
+        <button onclick="changeDiff('hard')"   id="idb-hard"   style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #ff6b6b;background:none;color:#ff6b6b;cursor:pointer;">Svær</button>
+      </div>
       <button class="btn btn-sm" style="background:none;border:1.5px solid rgba(231,76,60,.4);color:var(--accent2);font-size:.8rem;padding:6px 14px;" onclick="selfRemove()" title="Fjern dig fra pointtavlen">&#128465; Fjern mig</button>
     </div>
     <div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
@@ -2552,6 +2557,7 @@ function beginGame(){
     playerWords=getRandWords(diff,WORDS_PER_ROUND);
     wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0;
     document.getElementById('game-player-name').textContent=currentPlayer;
+    _updateDiffBtns();
     showScreen('screen-game');
     loadWord();
   },1400);
@@ -2737,6 +2743,24 @@ function endGame(){
   } else {
     showScreen('screen-result');
   }
+}
+function _updateDiffBtns(){
+  var cols={easy:'#4ecdc4',medium:'#f7c948',hard:'#ff6b6b'};
+  ['easy','medium','hard'].forEach(function(d){
+    var b=document.getElementById('idb-'+d);if(!b)return;
+    b.style.background=d===currentDiff?cols[d]:'none';
+    b.style.color=d===currentDiff?'#1a1a2e':cols[d];
+  });
+}
+function changeDiff(d){
+  if(d===currentDiff)return;
+  if(wordLocked)return; // mid-transition, ignore
+  currentDiff=d;
+  playerWords=shuffleArray(WORDS[d]);
+  wordIndex=0;
+  _updateDiffBtns();
+  showToast({easy:'Let tilstand 🟢',medium:'Mellem tilstand 🟡',hard:'Svær tilstand 🔴'}[d],'success');
+  loadWord();
 }
 function selfRemove(){
   if(!currentPlayer)return;

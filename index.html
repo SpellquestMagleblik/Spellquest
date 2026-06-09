@@ -2887,6 +2887,8 @@ function useHint(){
     document.getElementById('score-xp').textContent=prevTotalXP+xp;
   }
   showToast('Hint brugt! -200 XP','error');
+  // Gem XP-fradrag med det samme til Firebase
+  saveProgress(null);
   // Tjek om ordet er løst efter hint
   if(revealedSlots.every(function(v){return v;}))wordWon();
 }
@@ -2944,6 +2946,8 @@ function buyPowerup(type){
   }
   updatePowerupUI();
   updateLevelUI();
+  // Gem XP-fradrag med det samme til Firebase så lærerpanelet opdateres
+  saveProgress(null);
 }
 function rescueWord(){_clearFreezeTimer();wordLocked=false;wordIndex++;loadWord();}
 function saveProgress(correct){
@@ -2953,11 +2957,13 @@ function saveProgress(correct){
   var tXP=prevTotalXP+xp;
   var tC=prevTotalCorrect+scoreCorrect;
   var tW=prevTotalWrong+scoreWrong;
-  dbUpdate('students/'+safe,{
+  var update={
     correct:scoreCorrect,wrong:scoreWrong,xp:xp,
     totalXP:tXP,totalCorrect:tC,totalWrong:tW,
-    lastWord:currentWord.word,lastCorrect:correct,online:true
-  }).catch(function(e){console.warn('saveProgress fejl:',e);});
+    lastWord:currentWord?currentWord.word:'',online:true
+  };
+  if(correct!==null)update.lastCorrect=correct;
+  dbUpdate('students/'+safe,update).catch(function(e){console.warn('saveProgress fejl:',e);});
   updateLevelUI();
   updatePowerupUI();
 }

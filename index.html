@@ -2594,8 +2594,7 @@ function joinAsStudent(){
       prevTotalXP      = existing.totalXP      || 0;
       prevTotalCorrect = existing.totalCorrect || 0;
       prevTotalWrong   = existing.totalWrong   || 0;
-      // Hvis siden frøs midt i en session, kan 'correct'/'wrong'/'xp' indeholde
-      // fremskridt der aldrig nåede at blive lagt til totalerne — redder dem her
+      // Hvis siden frøs midt i en session reddes fremskridt der ikke nåede at blive gemt
       var sessionCorrect = existing.correct || 0;
       var sessionWrong   = existing.wrong   || 0;
       var sessionXP      = existing.xp      || 0;

@@ -2874,7 +2874,14 @@ function updateLevelUI(){
       badge.classList.remove('levelup-anim');
       void badge.offsetWidth;
       badge.classList.add('levelup-anim');
-      showToast('🎉 Niveau '+lv.lvl+' – '+lv.title+'!','success');
+      // Giv 5 bonus coins ved nyt niveau (fra niveau 2 og op)
+      if(lv.lvl>=2){
+        coinsSpent-=5; // negativ coinsSpent = bonus coins
+        updateCoins();
+        showToast('🎉 Niveau '+lv.lvl+' – '+lv.title+'! +5 bonus coins! 🪙','success');
+      } else {
+        showToast('🎉 Niveau '+lv.lvl+' – '+lv.title+'!','success');
+      }
     }
   }
   _lastLvl=lv.lvl;

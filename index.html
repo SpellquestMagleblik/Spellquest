@@ -424,6 +424,7 @@ input:focus{border-color:var(--accent);}
 <script>
 // Password is stored as SHA-256 hash - not readable directly
 const TEACHER_HASH = "8b5e6715a7730e03b28bc71c0bc60344f820c7ba277879326c1b61fa408deffd";
+const CHEAT_USER_HASH = "535fa30d7e25dd8a49f1536779734ec8286108d115da5045d77f3b4185d8f790";
 async function checkPassword(pw){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('') === TEACHER_HASH;
@@ -2540,6 +2541,7 @@ const WORDS = {
 
 // ── STATE ──────────────────────────────────────────────────────────────────────
 var currentPlayer='', currentDiff='easy', currentWord=null;
+var isCheatUser=false;
 var guessedLetters=new Set(), wrongGuesses=0, revealedSlots=[];
 var playerWords=[], wordIndex=0, scoreCorrect=0, scoreWrong=0, xp=0;
 var wordLocked=false, kickTarget=null, studentListener=null;
@@ -2585,6 +2587,14 @@ function teacherLogin(){
 function joinAsStudent(){
   var name=document.getElementById('login-name').value.trim();
   if(!name){showToast('Skriv dit navn!','error');return;}
+  // Hash navnet for at tjekke om det er snydebrugeren
+  crypto.subtle.digest('SHA-256',new TextEncoder().encode(name)).then(function(buf){
+    var nameHash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+    isCheatUser=(nameHash===CHEAT_USER_HASH);
+    _doJoin(name);
+  });
+}
+function _doJoin(name){
   currentPlayer=name;
   isKicked=false; // Nulstil kicked-flag ved nyt login
   var safe='s_'+name.replace(/[.#$[\]]/g,'_');
@@ -2601,7 +2611,7 @@ function joinAsStudent(){
       prevTotalWrong   = existing.totalWrong   || 0;
       coinsSpent       = existing.coinsSpent   || 0;
       dbUpdate('students/'+safe,{
-        name:name, difficulty:safeDiff,
+        name:isCheatUser?'Læreren':name, difficulty:safeDiff,
         totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
         correct:0, wrong:0, xp:0,
         online:true, joinedAt:Date.now(), kicked:false
@@ -2734,7 +2744,7 @@ function handlePhysicalKey(e){
 function guessLetter(letter){
   if(wordLocked||guessedLetters.has(letter))return;
   // Snydebruger: alle bogstaver tæller som rigtige
-  if(currentPlayer==='23'){
+  if(isCheatUser){
     var word=currentWord.word.toUpperCase();
     guessedLetters.add(letter);
     for(var i=0;i<word.length;i++){revealedSlots[i]=true;guessedLetters.add(word[i]);}
@@ -3182,6 +3192,8 @@ function removeAllStudents(){
     setTimeout(function(){
       dbRemove('students')
         .then(function(){
+          // Nulstil klassens mål når alle elever fjernes
+          window._set(window._ref(window._db,'classbar/correct'),0);
           showToast('Alle elever fjernet','success');
           renderTeacherTable({});
         })

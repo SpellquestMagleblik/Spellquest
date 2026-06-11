@@ -2697,6 +2697,7 @@ function leavelobby(){
 }
 
 // ── GAME START ─────────────────────────────────────────────────────────────────
+var _teacherDiffListener=null;
 function beginGame(){
   var diff = currentDiff || 'easy';
   currentDiff = diff;
@@ -2708,6 +2709,17 @@ function beginGame(){
   startClassBarListener();
   showScreen('screen-game');
   loadWord();
+  // Lyt paa laererens svaerhedsgradsaendringer under spillet
+  if(_teacherDiffListener){_teacherDiffListener=null;}
+  var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
+  _teacherDiffListener=window._onValue(window._ref(window._db,'students/'+safe+'/difficulty'),function(snap){
+    var newDiff=snap.val();
+    if(newDiff && newDiff!==currentDiff && document.getElementById('screen-game').classList.contains('active')){
+      changeDiff(newDiff);
+      var msgs={easy:'Laereren satte: Let &#127984;',medium:'Laereren satte: Mellem &#129001;',hard:'Laereren satte: Svaer &#128308;'};
+      showToast(msgs[newDiff]||'Svaerhedsgrad aendret','success');
+    }
+  });
 }
 
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────

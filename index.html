@@ -2670,7 +2670,7 @@ function loadWord(){
   currentWord=playerWords[wordIndex];
   guessedLetters=new Set();
   wrongGuesses=0; wordLocked=false; hintUsed=false;
-  puUsed.first=false; puUsed.last=false; // ekstra liv nulstilles IKKE per ord
+  puUsed.first=false; puUsed.last=false; puUsed.shield=false; // ekstra liv nulstilles IKKE per ord
   revealedSlots=new Array(currentWord.word.length).fill(false);
   var hb=document.getElementById('hint-btn');if(hb)hb.style.display='none';
   updatePowerupUI();
@@ -2805,8 +2805,8 @@ function wordLost(){
   _startFreezeTimer();
   var row=document.getElementById('powerup-row');if(row)row.style.display='none';
   scoreWrong++;
-  // -30 XP for hele ordet tabt på let/mellem, -60 på svær (minimum 0)
-  var wordPenalty=currentDiff==='hard'?60:currentDiff==='easy'?0:30;
+  // -20 XP for hele ordet tabt på mellem, -30 på svær (minimum 0)
+  var wordPenalty=currentDiff==='hard'?30:currentDiff==='easy'?0:20;
   var penalty=puUsed.shield?0:Math.min(wordPenalty,prevTotalXP+xp);
   if(penalty>0){
     xp-=penalty;

@@ -2662,6 +2662,7 @@ function beginGame(){
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────
 function loadWord(){
   _clearFreezeTimer();
+  wordLocked=false; // Sørg for at lås altid fjernes inden nyt ord begynder
   if(wordIndex>=playerWords.length){
     // Pool exhausted – reshuffle and continue forever
     playerWords=shuffleArray(WORDS[currentDiff]);
@@ -2669,7 +2670,7 @@ function loadWord(){
   }
   currentWord=playerWords[wordIndex];
   guessedLetters=new Set();
-  wrongGuesses=0; wordLocked=false; hintUsed=false;
+  wrongGuesses=0; hintUsed=false;
   puUsed.first=false; puUsed.last=false; puUsed.shield=false; // ekstra liv nulstilles IKKE per ord
   revealedSlots=new Array(currentWord.word.length).fill(false);
   var hb=document.getElementById('hint-btn');if(hb)hb.style.display='none';
@@ -2941,7 +2942,7 @@ function useHint(){
   }
   showToast('Hint brugt! -'+hintCost+' XP','error');
   // Tjek om ordet er løst efter hint – return tidligt så saveProgress ikke interfererer
-  if(revealedSlots.every(function(v){return v;})){wordWon();return;}
+  if(revealedSlots.every(function(v){return v;})){updatePowerupUI();wordWon();return;}
   // Gem XP-fradrag til Firebase
   saveProgress(null);
 }
@@ -2987,7 +2988,7 @@ function buyPowerup(type){
     for(var i=0;i<word.length;i++){if(word[i]===letter)revealedSlots[i]=true;}
     renderSlots();renderKeyboard();
     showToast('🔤 Første bogstav afsløret! (-1 coin)','success');
-    if(revealedSlots.every(function(v){return v;})){wordWon();return;}
+    if(revealedSlots.every(function(v){return v;})){updatePowerupUI();wordWon();return;}
   } else if(type==='last'){
     var word=currentWord.word.toUpperCase();
     var letter=word[word.length-1];
@@ -2995,7 +2996,7 @@ function buyPowerup(type){
     for(var i=0;i<word.length;i++){if(word[i]===letter)revealedSlots[i]=true;}
     renderSlots();renderKeyboard();
     showToast('🔡 Sidste bogstav afsløret! (-1 coin)','success');
-    if(revealedSlots.every(function(v){return v;})){wordWon();return;}
+    if(revealedSlots.every(function(v){return v;})){updatePowerupUI();wordWon();return;}
   } else if(type==='life'){
     if(wrongGuesses>0){
       wrongGuesses--;
@@ -3015,7 +3016,13 @@ function buyPowerup(type){
   updateLevelUI();
   saveProgress(null);
 }
-function rescueWord(){_clearFreezeTimer();wordLocked=false;wordIndex++;loadWord();}
+function rescueWord(){
+  _clearFreezeTimer();
+  wordLocked=false;
+  var row=document.getElementById('powerup-row');if(row)row.style.display='block';
+  wordIndex++;
+  loadWord();
+}
 function saveProgress(correct){
   if(isKicked)return; // Stop hvis eleven er fjernet
   if(!currentPlayer)return;

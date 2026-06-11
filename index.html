@@ -317,7 +317,7 @@ input:focus{border-color:var(--accent);}
           <div class="letter-slots" id="letter-slots"></div>
           <div style="margin-top:10px;font-size:.8rem;color:var(--text2);font-weight:600" id="word-progress-label"></div>
           <button id="rescue-btn" onclick="rescueWord()" style="display:none;margin-top:12px;width:100%;padding:10px;background:rgba(247,201,72,.12);border:1.5px solid var(--accent);border-radius:10px;color:var(--accent);font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;">&#9654; Næste ord (siden frøs – tryk her)</button>
-          <button id="hint-btn" onclick="useHint()" style="display:none;margin-top:8px;width:100%;padding:10px;background:rgba(78,205,196,.1);border:1.5px solid #4ecdc4;border-radius:10px;color:#4ecdc4;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;">&#128161; Hint – afslør 2 bogstaver (-200 XP)</button>
+          <button id="hint-btn" onclick="useHint()" style="display:none;margin-top:8px;width:100%;padding:10px;background:rgba(78,205,196,.1);border:1.5px solid #4ecdc4;border-radius:10px;color:#4ecdc4;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;">💡 Hint – afslør 2 bogstaver (<span id="hint-cost-label">-50 XP</span>)</button>
           <!-- Power-ups -->
           <div id="powerup-row" style="display:none;margin-top:14px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;">
             <div style="font-size:.65rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;text-align:center;">⚡ Power-ups</div>
@@ -325,6 +325,7 @@ input:focus{border-color:var(--accent);}
               <button id="pu-first" onclick="buyPowerup('first')" class="pu-btn" title="Vis første bogstav">🔤 Første<br><span class="pu-cost">🪙 1 coin</span></button>
               <button id="pu-last"  onclick="buyPowerup('last')"  class="pu-btn" title="Vis sidste bogstav">🔡 Sidste<br><span class="pu-cost">🪙 1 coin</span></button>
               <button id="pu-life"  onclick="buyPowerup('life')"  class="pu-btn" title="Ekstra liv">❤️ Liv<br><span class="pu-cost">🪙 1 coin</span></button>
+              <button id="pu-shield" onclick="buyPowerup('shield')" class="pu-btn" title="Ingen XP-straf dette ord">🛡️ Skjold<br><span class="pu-cost">🪙 1 coin</span></button>
             </div>
           </div>
         </div>
@@ -2546,8 +2547,8 @@ var guessedLetters=new Set(), wrongGuesses=0, revealedSlots=[];
 var playerWords=[], wordIndex=0, scoreCorrect=0, scoreWrong=0, xp=0;
 var wordLocked=false, kickTarget=null, studentListener=null;
 var hintUsed=false;
-var puUsed={first:false,last:false,life:false}; // life: bruges per session, ikke per ord
-var coinsSpent=0;
+var puUsed={first:false,last:false,life:false,shield:false}; // life: bruges per session, ikke per ord
+var coins=0, coinsEarned=0, coinsSpent=0;
 var prevTotalXP=0, prevTotalCorrect=0, prevTotalWrong=0;
 
 // ── UTILS ──────────────────────────────────────────────────────────────────────
@@ -2610,6 +2611,7 @@ function _doJoin(name){
       prevTotalCorrect = existing.totalCorrect || 0;
       prevTotalWrong   = existing.totalWrong   || 0;
       coinsSpent       = existing.coinsSpent   || 0;
+      coinsEarned      = existing.coinsEarned  || 0;
       dbUpdate('students/'+safe,{
         name:isCheatUser?'Læreren':name, difficulty:safeDiff,
         totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
@@ -2647,7 +2649,7 @@ function beginGame(){
   showScreen('screen-waiting');
   setTimeout(function(){
     playerWords=getRandWords(diff,WORDS_PER_ROUND);
-    wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0; coinsSpent=0;
+    wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0; coinsSpent=0; coinsEarned=0;
     puUsed={first:false,last:false,life:false};
     document.getElementById('game-player-name').textContent=currentPlayer;
     _updateDiffBtns();
@@ -2768,8 +2770,8 @@ function guessLetter(letter){
     wrongGuesses++;
     updateHangman();
     // -10 XP per forkert bogstav på let/mellem, -20 på svær (minimum 0)
-    var letterPenalty=currentDiff==='hard'?20:10;
-    var penalty=Math.min(letterPenalty,prevTotalXP+xp);
+    var letterPenalty=currentDiff==='hard'?20:currentDiff==='easy'?0:10;
+    var penalty=puUsed.shield?0:Math.min(letterPenalty,prevTotalXP+xp);
     if(penalty>0){
       xp-=penalty;
       if(xp<0){prevTotalXP+=xp;xp=0;}
@@ -2804,8 +2806,8 @@ function wordLost(){
   var row=document.getElementById('powerup-row');if(row)row.style.display='none';
   scoreWrong++;
   // -30 XP for hele ordet tabt på let/mellem, -60 på svær (minimum 0)
-  var wordPenalty=currentDiff==='hard'?60:30;
-  var penalty=Math.min(wordPenalty,prevTotalXP+xp);
+  var wordPenalty=currentDiff==='hard'?60:currentDiff==='easy'?0:30;
+  var penalty=puUsed.shield?0:Math.min(wordPenalty,prevTotalXP+xp);
   if(penalty>0){
     xp-=penalty;
     if(xp<0){prevTotalXP+=xp;xp=0;}
@@ -2815,7 +2817,7 @@ function wordLost(){
   renderSlots();
   document.querySelectorAll('.letter-slot').forEach(function(s){s.classList.add('wrong-reveal');});
   showFeedback(currentWord.word.toUpperCase(),'fail');
-  showToast('Ordet var: '+currentWord.word.toUpperCase()+' (-'+wordPenalty+' XP)','error');
+  showToast('Ordet var: '+currentWord.word.toUpperCase()+(puUsed.shield?' 🛡️':wordPenalty>0?' (-'+wordPenalty+' XP)':''),'error');
   saveProgress(false);
   setTimeout(nextWord,1600);
 }
@@ -2876,7 +2878,7 @@ function updateLevelUI(){
       badge.classList.add('levelup-anim');
       // Giv 5 bonus coins ved nyt niveau (fra niveau 2 og op)
       if(lv.lvl>=2){
-        coinsSpent-=5; // negativ coinsSpent = bonus coins
+        coinsEarned+=5; // bonus coins ved nyt niveau
         updateCoins();
         showToast('🎉 Niveau '+lv.lvl+' – '+lv.title+'! +5 bonus coins! 🪙','success');
       } else {
@@ -2946,10 +2948,12 @@ function useHint(){
 // ── POWER-UPS ──────────────────────────────────────────────────────────────────
 var coins=0, prevTotalXPForCoins=0;
 function updateCoins(){
-  // 1 coin per 100 XP total (afrundet ned)
+  // Coins tjenes ved milestones (2 per 100 XP) men mistes KUN ved power-up køb
+  // coinsEarned går kun op – aldrig ned – så XP-straf påvirker ikke coins
   var totalXP=prevTotalXP+xp;
-  var earned=Math.floor(totalXP/100);
-  coins=earned-coinsSpent;
+  var newlyEarned=Math.floor(totalXP/100)*2;
+  if(newlyEarned>coinsEarned)coinsEarned=newlyEarned;
+  coins=coinsEarned-coinsSpent;
   if(coins<0)coins=0;
   var el=document.getElementById('score-coins');
   if(el)el.textContent=coins;
@@ -2958,7 +2962,7 @@ function updatePowerupUI(){
   var row=document.getElementById('powerup-row');
   if(row)row.style.display=wordLocked?'none':'block';
   updateCoins();
-  ['first','last','life'].forEach(function(t){
+  ['first','last','life','shield'].forEach(function(t){
     var btn=document.getElementById('pu-'+t);
     if(!btn)return;
     var used=puUsed[t];
@@ -3004,6 +3008,8 @@ function buyPowerup(type){
       puUsed.life=false;
       showToast('Du har allerede fulde liv!','error');return;
     }
+  } else if(type==='shield'){
+    showToast('🛡️ Skjold aktiveret! Ingen XP-straf dette ord.','success');
   }
   updatePowerupUI();
   updateLevelUI();
@@ -3022,7 +3028,8 @@ function saveProgress(correct){
     totalXP:tXP,totalCorrect:tC,totalWrong:tW,
     lastWord:currentWord?currentWord.word:'',online:true,
     difficulty:currentDiff||'easy',
-    coinsSpent:coinsSpent
+    coinsSpent:coinsSpent,
+    coinsEarned:coinsEarned
   };
   if(correct!==null)update.lastCorrect=correct;
   dbUpdate('students/'+safe,update).catch(function(e){console.warn('saveProgress fejl:',e);});
@@ -3078,6 +3085,8 @@ function changeDiff(d){
   playerWords=shuffleArray(WORDS[d]);
   wordIndex=0;
   _updateDiffBtns();
+  var hintLabel=document.getElementById('hint-cost-label');
+  if(hintLabel)hintLabel.textContent='-'+(d==='easy'?50:d==='medium'?100:150)+' XP';
   showToast({easy:'Let tilstand 🟢',medium:'Mellem tilstand 🟡',hard:'Svær tilstand 🔴'}[d],'success');
   if(currentPlayer){
     var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');

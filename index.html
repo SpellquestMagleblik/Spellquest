@@ -2712,14 +2712,35 @@ function beginGame(){
   // Lyt paa laererens svaerhedsgradsaendringer under spillet
   if(_teacherDiffListener){_teacherDiffListener=null;}
   var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
+  var _firstDiffFire=true; // ignorer det foerste fire (nuvaerende vaerdi)
   _teacherDiffListener=window._onValue(window._ref(window._db,'students/'+safe+'/difficulty'),function(snap){
     var newDiff=snap.val();
-    if(newDiff && newDiff!==currentDiff && document.getElementById('screen-game').classList.contains('active')){
-      changeDiff(newDiff);
-      var msgs={easy:'Laereren satte: Let &#127984;',medium:'Laereren satte: Mellem &#129001;',hard:'Laereren satte: Svaer &#128308;'};
-      showToast(msgs[newDiff]||'Svaerhedsgrad aendret','success');
-    }
+    if(_firstDiffFire){_firstDiffFire=false;return;} // spring det initielle fire over
+    if(!newDiff)return;
+    if(!document.getElementById('screen-game').classList.contains('active'))return;
+    if(newDiff===currentDiff)return;
+    // Skift svaerhedsgrad – ogsaa selvom ordet er laast (aendringen traeder i kraft ved naeste ord)
+    var wasLocked=wordLocked;
+    wordLocked=false; // laas midlertidigt op saa changeDiff ikke afvises
+    _applyTeacherDiff(newDiff);
+    wordLocked=wasLocked;
   });
+}
+
+function _applyTeacherDiff(d){
+  currentDiff=d;
+  playerWords=shuffleArray(WORDS[d]);
+  wordIndex=0;
+  _updateDiffBtns();
+  var hintLabel=document.getElementById('hint-cost-label');
+  if(hintLabel)hintLabel.textContent='-'+(d==='easy'?50:d==='medium'?100:150)+' XP';
+  var labels={easy:'Laereren satte: Let \uD83D\uDFE2',medium:'Laereren satte: Mellem \uD83D\uDFE1',hard:'Laereren satte: Svaer \uD83D\uDD34'};
+  showToast(labels[d]||'Svaerhedsgrad aendret','success');
+  // Gem IKKE tilbage til Firebase herfra – det ville lave en uendelig loekke med lytteren
+  if(!wordLocked){
+    loadWord(); // start straks nyt ord fra ny svaerhedsgrad
+  }
+  // Hvis ordet er laast (eleven er ved at se facit), loader naeste ord alligevel snart via nextWord()
 }
 
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────
@@ -3155,11 +3176,9 @@ function changeDiff(d){
   _updateDiffBtns();
   var hintLabel=document.getElementById('hint-cost-label');
   if(hintLabel)hintLabel.textContent='-'+(d==='easy'?50:d==='medium'?100:150)+' XP';
-  showToast({easy:'Let tilstand 🟢',medium:'Mellem tilstand 🟡',hard:'Svær tilstand 🔴'}[d],'success');
-  if(currentPlayer){
-    var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
-    dbUpdate('students/'+safe,{difficulty:d}).catch(function(e){console.warn('changeDiff fejl:',e);});
-  }
+  showToast({easy:'Let tilstand \uD83D\uDFE2',medium:'Mellem tilstand \uD83D\uDFE1',hard:'Sv\u00E6r tilstand \uD83D\uDD34'}[d],'success');
+  // Skriv KUN til Firebase hvis eleven selv har skiftet (ikke naar laereren gjoer det)
+  // – for at undgaa en uendelig loekke med _teacherDiffListener
   loadWord();
 }
 function selfRemove(){

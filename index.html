@@ -2930,17 +2930,18 @@ function useHint(){
   renderSlots();
   renderKeyboard();
   // XP straf – minimum 0
-  var penalty=Math.min(200, prevTotalXP+xp);
+  var hintCost=currentDiff==='easy'?50:currentDiff==='medium'?100:150;
+  var penalty=Math.min(hintCost, prevTotalXP+xp);
   if(penalty>0){
     xp-=penalty;
-    if(xp<0){prevTotalXP+=xp;xp=0;} // lad det gå ind i total hvis xp går negativ
+    if(xp<0){prevTotalXP+=xp;xp=0;}
     document.getElementById('score-xp').textContent=prevTotalXP+xp;
   }
-  showToast('Hint brugt! -200 XP','error');
-  // Gem XP-fradrag med det samme til Firebase
+  showToast('Hint brugt! -'+hintCost+' XP','error');
+  // Tjek om ordet er løst efter hint – return tidligt så saveProgress ikke interfererer
+  if(revealedSlots.every(function(v){return v;})){wordWon();return;}
+  // Gem XP-fradrag til Firebase
   saveProgress(null);
-  // Tjek om ordet er løst efter hint
-  if(revealedSlots.every(function(v){return v;}))wordWon();
 }
 // ── POWER-UPS ──────────────────────────────────────────────────────────────────
 var coins=0, prevTotalXPForCoins=0;
@@ -2982,7 +2983,7 @@ function buyPowerup(type){
     for(var i=0;i<word.length;i++){if(word[i]===letter)revealedSlots[i]=true;}
     renderSlots();renderKeyboard();
     showToast('🔤 Første bogstav afsløret! (-1 coin)','success');
-    if(revealedSlots.every(function(v){return v;}))wordWon();
+    if(revealedSlots.every(function(v){return v;})){wordWon();return;}
   } else if(type==='last'){
     var word=currentWord.word.toUpperCase();
     var letter=word[word.length-1];
@@ -2990,7 +2991,7 @@ function buyPowerup(type){
     for(var i=0;i<word.length;i++){if(word[i]===letter)revealedSlots[i]=true;}
     renderSlots();renderKeyboard();
     showToast('🔡 Sidste bogstav afsløret! (-1 coin)','success');
-    if(revealedSlots.every(function(v){return v;}))wordWon();
+    if(revealedSlots.every(function(v){return v;})){wordWon();return;}
   } else if(type==='life'){
     if(wrongGuesses>0){
       wrongGuesses--;

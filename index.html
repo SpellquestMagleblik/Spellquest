@@ -124,8 +124,8 @@ input:focus{border-color:var(--accent);}
 .stat-card .stat-num{font-family:'Fredoka One',cursive;font-size:2.4rem;margin-bottom:4px;}
 .stat-card .stat-label{color:var(--text2);font-size:.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
 .student-table{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;}
-.student-table-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;padding:16px 24px;background:var(--surface2);font-size:.8rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text2);gap:8px;}
-.student-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;padding:16px 24px;border-top:1px solid rgba(255,255,255,.05);align-items:center;transition:background .15s;gap:8px;}
+.student-table-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.5fr 1fr;padding:16px 24px;background:var(--surface2);font-size:.8rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text2);gap:8px;}
+.student-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.5fr 1fr;padding:16px 24px;border-top:1px solid rgba(255,255,255,.05);align-items:center;transition:background .15s;gap:8px;}
 .student-row:hover{background:var(--surface2);}
 .student-name{font-weight:800;font-size:1rem;display:flex;align-items:center;gap:10px;}
 .online-dot{width:8px;height:8px;border-radius:50%;background:var(--easy);flex-shrink:0;box-shadow:0 0 6px var(--easy);}
@@ -219,12 +219,12 @@ input:focus{border-color:var(--accent);}
   <div class="card">
     <h2>&#127918; Hvem er du?</h2>
     <input type="text" id="login-name" placeholder="Dit navn (fx. Emma)" maxlength="30"/>
-    <div class="diff-row">
-      <button class="diff-btn easy selected" data-diff="easy" onclick="selectDiff('easy')">&#127984; Let<br><small>6. klasse</small></button>
-      <button class="diff-btn medium" data-diff="medium" onclick="selectDiff('medium')">&#129001; Mellem<br><small>7-8. klasse</small></button>
-      <button class="diff-btn hard" data-diff="hard" onclick="selectDiff('hard')">&#128308; Svaer<br><small>9. klasse</small></button>
+    <div style="background:var(--surface2);border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center;border:1.5px solid rgba(78,205,196,.25);">
+      <div style="font-size:1.5rem;margin-bottom:6px;">&#128276;</div>
+      <div style="font-weight:700;color:var(--accent3);font-size:.9rem;">Sv&#230;rhedsgrad v&#230;lges af din l&#230;rer</div>
+      <div style="color:var(--text2);font-size:.8rem;margin-top:4px;">Tryk &#34;G&#229; til lobby&#34; og vent p&#229; at l&#230;reren starter spillet</div>
     </div>
-    <button class="btn btn-primary" onclick="joinAsStudent()">&#9654; Spil som elev</button>
+    <button class="btn btn-primary" onclick="joinAsStudent()">&#9654; G&#229; til lobby</button>
     <hr class="divider">
     <button class="btn btn-secondary" onclick="showTeacherLogin()">&#128273; Laerer-login</button>
   </div>
@@ -241,15 +241,18 @@ input:focus{border-color:var(--accent);}
   </div>
 </div>
 
-<!-- WAITING -->
+<!-- WAITING / LOBBY -->
 <div class="screen" id="screen-waiting">
-  <div class="waiting-icon">&#9203;</div>
+  <div class="waiting-icon" id="waiting-icon-el">&#9203;</div>
   <h2 style="font-size:1.8rem;margin-bottom:12px;text-align:center">Godt at se dig, <span id="waiting-name"></span>!</h2>
-  <p style="color:var(--text2);margin-bottom:32px;text-align:center">Gor dig klar...</p>
+  <p style="color:var(--text2);margin-bottom:32px;text-align:center" id="waiting-subtitle">Venter p&#229; at l&#230;reren v&#230;lger sv&#230;rhedsgrad...</p>
   <div class="card" style="text-align:center;max-width:360px">
-    <div style="font-size:3rem;margin-bottom:8px">&#127919;</div>
-    <div id="waiting-diff" style="margin-bottom:4px;font-weight:700"></div>
-    <div style="color:var(--text2);font-size:.9rem">6 forsog per ord - pas pa haengmanden!</div>
+    <div style="font-size:3rem;margin-bottom:8px" id="waiting-status-icon">&#128105;&#8203;&#127979;</div>
+    <div id="waiting-diff" style="margin-bottom:4px;font-weight:700;color:var(--accent3)"></div>
+    <div style="color:var(--text2);font-size:.9rem" id="waiting-hint-text">Din l&#230;rer tildeler dig snart en sv&#230;rhedsgrad</div>
+  </div>
+  <div style="margin-top:20px;max-width:360px;width:100%">
+    <button class="btn btn-secondary" style="font-size:.85rem;padding:10px 20px;" onclick="leavelobby()">&#8592; Tilbage</button>
   </div>
 </div>
 
@@ -266,9 +269,9 @@ input:focus{border-color:var(--accent);}
         <div class="xp-display" style="color:#f7c948;">&#129689; <span id="score-coins">0</span> coins</div>
       </div>
       <div id="ingame-diff-btns" style="display:flex;gap:5px;">
-        <button onclick="changeDiff('easy')"   id="idb-easy"   style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #4ecdc4;background:none;color:#4ecdc4;cursor:pointer;">Let</button>
-        <button onclick="changeDiff('medium')" id="idb-medium" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #f7c948;background:none;color:#f7c948;cursor:pointer;">Mellem</button>
-        <button onclick="changeDiff('hard')"   id="idb-hard"   style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #ff6b6b;background:none;color:#ff6b6b;cursor:pointer;">Svær</button>
+        <span id="idb-easy" style="display:none;font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #4ecdc4;color:#4ecdc4;">Let</span>
+        <span id="idb-medium" style="display:none;font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #f7c948;color:#f7c948;">Mellem</span>
+        <span id="idb-hard" style="display:none;font-family:'Nunito',sans-serif;font-weight:800;font-size:.75rem;padding:5px 10px;border-radius:8px;border:1.5px solid #ff6b6b;color:#ff6b6b;">Svær</span>
       </div>
       <button class="btn btn-sm" style="background:none;border:1.5px solid rgba(231,76,60,.4);color:var(--accent2);font-size:.8rem;padding:6px 14px;" onclick="selfRemove()" title="Fjern dig fra pointtavlen">&#128465; Fjern mig</button>
     </div>
@@ -385,8 +388,15 @@ input:focus{border-color:var(--accent);}
 <div class="screen" id="screen-teacher">
   <div class="teacher-wrap">
     <div class="teacher-header">
-      <h1>&#128202; Laerer-panel</h1>
-      <div style="display:flex;gap:10px;align-items:center;">
+      <h1>&#128202; L&#230;rer-panel</h1>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;align-items:center;background:var(--surface2);border-radius:12px;padding:8px 14px;border:1px solid rgba(255,255,255,.08);">
+          <span style="font-size:.8rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Alle elever:</span>
+          <button class="btn btn-sm" style="background:var(--easy);color:#fff;border:none;font-size:.8rem;padding:6px 12px;" onclick="setAllDifficulty('easy')">&#127984; Let</button>
+          <button class="btn btn-sm" style="background:var(--medium);color:#fff;border:none;font-size:.8rem;padding:6px 12px;" onclick="setAllDifficulty('medium')">&#129001; Mellem</button>
+          <button class="btn btn-sm" style="background:var(--hard);color:#fff;border:none;font-size:.8rem;padding:6px 12px;" onclick="setAllDifficulty('hard')">&#128308; Sv&#230;r</button>
+          <button class="btn btn-sm" style="background:var(--accent);color:#1a1200;border:none;font-size:.8rem;padding:6px 12px;font-weight:900;" onclick="startAllStudents()">&#9654; Start alle</button>
+        </div>
         <button class="btn btn-secondary btn-sm" style="background:#ff6b6b;color:#fff;border-color:#ff6b6b;" onclick="removeAllStudents()">&#128465; Fjern alle elever</button>
         <button class="btn btn-secondary btn-sm" onclick="showScreen('screen-login')">Afslut</button>
       </div>
@@ -398,9 +408,9 @@ input:focus{border-color:var(--accent);}
       <div class="stat-card"><div class="stat-num" style="color:var(--accent2)" id="t-total-wrong">0</div><div class="stat-label">Forkerte i alt</div></div>
     </div>
     <div class="student-table">
-      <div class="student-table-header">
-        <div>Elev</div><div>Svaerhed</div><div>Rigtige</div>
-        <div class="hide-sm">Forkerte</div><div>Score / XP</div><div>Fjern</div>
+      <div class="student-table-header" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.5fr 1fr;">
+        <div>Elev</div><div>Sv&#230;rhed</div><div>Rigtige</div>
+        <div class="hide-sm">Forkerte</div><div>Score / XP</div><div>S&#230;t niveau</div><div>Fjern</div>
       </div>
       <div id="student-list-rows"><div style="padding:40px;text-align:center;color:var(--text2)">Ingen elever tilmeldt endnu...</div></div>
     </div>
@@ -2568,7 +2578,6 @@ function dbGet(p){return window._get(window._ref(window._db,p));}
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded',function(){
-  selectDiff('easy'); // ensure default is always set
   document.getElementById('login-name').addEventListener('keydown',function(e){if(e.key==='Enter')joinAsStudent();});
   document.getElementById('teacher-password').addEventListener('keydown',function(e){if(e.key==='Enter')teacherLogin();});
   document.addEventListener('keydown',handlePhysicalKey);
@@ -2595,16 +2604,15 @@ function joinAsStudent(){
     _doJoin(name);
   });
 }
+var _diffListener=null;
 function _doJoin(name){
   currentPlayer=name;
-  isKicked=false; // Nulstil kicked-flag ved nyt login
+  isKicked=false;
   var safe='s_'+name.replace(/[.#$[\]]/g,'_');
-  var safeDiff = currentDiff || 'easy';
 
   prevTotalXP = 0; prevTotalCorrect = 0; prevTotalWrong = 0;
 
-  // Hent eksisterende data FØR spillet starter så akkumulerede point er korrekte
-  function startWithData(){
+  function enterLobby(){
     dbGet('students/'+safe).then(function(snap){
       var existing=snap.val()||{};
       prevTotalXP      = existing.totalXP      || 0;
@@ -2612,51 +2620,94 @@ function _doJoin(name){
       prevTotalWrong   = existing.totalWrong   || 0;
       coinsSpent       = existing.coinsSpent   || 0;
       coinsEarned      = existing.coinsEarned  || 0;
+
+      // Registrer eleven i lobby uden svaerhedsgrad
       dbUpdate('students/'+safe,{
-        name:isCheatUser?'Læreren':name, difficulty:safeDiff,
+        name:isCheatUser?'Laereren':name,
+        difficulty: existing.difficulty || null,
+        teacherStarted: false,
         totalXP:prevTotalXP, totalCorrect:prevTotalCorrect, totalWrong:prevTotalWrong,
         correct:0, wrong:0, xp:0,
         online:true, joinedAt:Date.now(), kicked:false
       }).catch(function(e){console.warn('Firebase write:',e);});
-      dbOn('students/'+safe+'/kicked',function(snap){
-        if(snap.val()===true){
+
+      // Lyt paa kick
+      dbOn('students/'+safe+'/kicked',function(ksnap){
+        if(ksnap.val()===true){
           isKicked=true;
           showToast('Du er fjernet fra spillet.','error');
           setTimeout(function(){dbRemove('students/'+safe);maybeResetClassBar();showScreen('screen-login');},2000);
         }
       });
-      beginGame();
+
+      // Vis lobby
+      document.getElementById('waiting-name').textContent=currentPlayer;
+      var wdiff=document.getElementById('waiting-diff');
+      var whint=document.getElementById('waiting-hint-text');
+      var wicon=document.getElementById('waiting-status-icon');
+      var wiconel=document.getElementById('waiting-icon-el');
+      if(wdiff)wdiff.textContent='';
+      if(whint)whint.textContent='Din laerer tildeler dig snart en svaerhedsgrad';
+      if(wicon)wicon.textContent='\u{1F469}\u200D\u{1F3EB}';
+      if(wiconel)wiconel.textContent='\u23F3';
+      showScreen('screen-waiting');
+
+      // Lyt paa teacherStarted – starter spillet naar laereren trykker
+      _diffListener=window._onValue(window._ref(window._db,'students/'+safe),function(dsnap){
+        var d=dsnap.val()||{};
+        if(d.kicked)return;
+        var diff=d.difficulty||null;
+        var started=d.teacherStarted||false;
+        if(diff){
+          var labels={easy:'\uD83D\uDFE2 Let – 6. klasse',medium:'\uD83D\uDFE1 Mellem – 7-8. klasse',hard:'\uD83D\uDD34 Svaer – 9. klasse'};
+          if(wdiff)wdiff.textContent='Svaerhedsgrad: '+labels[diff];
+          if(whint)whint.textContent='Vent – laereren starter snart spillet...';
+          if(wicon)wicon.textContent='\u2705';
+          currentDiff=diff;
+        } else {
+          if(wdiff)wdiff.textContent='';
+          if(whint)whint.textContent='Din laerer tildeler dig snart en svaerhedsgrad';
+          if(wicon)wicon.textContent='\u{1F469}\u200D\u{1F3EB}';
+        }
+        if(started && diff && document.getElementById('screen-waiting').classList.contains('active')){
+          dbUpdate('students/'+safe,{teacherStarted:false}).catch(function(){});
+          beginGame();
+        }
+      });
     }).catch(function(e){
-      console.warn('Firebase read fejl, starter uden data:',e);
-      beginGame();
+      console.warn('Firebase read fejl:',e);
+      document.getElementById('waiting-name').textContent=name;
+      showScreen('screen-waiting');
     });
   }
 
   if(window._firebaseReady){
-    startWithData();
+    enterLobby();
   } else {
-    document.addEventListener('firebaseReady', startWithData, {once:true});
+    document.addEventListener('firebaseReady', enterLobby, {once:true});
   }
+}
+
+function leavelobby(){
+  if(!currentPlayer)return;
+  var safe='s_'+currentPlayer.replace(/[.#$[\]]/g,'_');
+  dbRemove('students/'+safe).catch(function(){});
+  currentPlayer=null;
+  showScreen('screen-login');
 }
 
 // ── GAME START ─────────────────────────────────────────────────────────────────
 function beginGame(){
   var diff = currentDiff || 'easy';
   currentDiff = diff;
-  var labels={easy:'Let - 6. klasse',medium:'Mellem - 7-8. klasse',hard:'Svaer - 9. klasse'};
-  document.getElementById('waiting-name').textContent=currentPlayer;
-  document.getElementById('waiting-diff').textContent=labels[diff]||'Let - 6. klasse';
-  showScreen('screen-waiting');
-  setTimeout(function(){
-    playerWords=getRandWords(diff,WORDS_PER_ROUND);
-    wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0; coinsSpent=0; coinsEarned=0;
-    puUsed={first:false,last:false,life:false};
-    document.getElementById('game-player-name').textContent=currentPlayer;
-    _updateDiffBtns();
-    startClassBarListener();
-    showScreen('screen-game');
-    loadWord();
-  },1400);
+  playerWords=getRandWords(diff,WORDS_PER_ROUND);
+  wordIndex=0; scoreCorrect=0; scoreWrong=0; xp=0; coinsSpent=0; coinsEarned=0;
+  puUsed={first:false,last:false,life:false};
+  document.getElementById('game-player-name').textContent=currentPlayer;
+  _updateDiffBtns();
+  startClassBarListener();
+  showScreen('screen-game');
+  loadWord();
 }
 
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────
@@ -3078,11 +3129,9 @@ function endGame(){
   }
 }
 function _updateDiffBtns(){
-  var cols={easy:'#4ecdc4',medium:'#f7c948',hard:'#ff6b6b'};
   ['easy','medium','hard'].forEach(function(d){
     var b=document.getElementById('idb-'+d);if(!b)return;
-    b.style.background=d===currentDiff?cols[d]:'none';
-    b.style.color=d===currentDiff?'#1a1a2e':cols[d];
+    b.style.display=d===currentDiff?'inline-block':'none';
   });
 }
 function changeDiff(d){
@@ -3148,6 +3197,50 @@ function showPodium(){
   });
 }
 
+// ── TEACHER DIFFICULTY CONTROLS ────────────────────────────────────────────────
+function teacherSetDiff(safe, diff){
+  var updates={};
+  updates['students/'+safe+'/difficulty']=diff;
+  window._update(window._ref(window._db),updates).catch(function(){});
+  var labels={easy:'Let',medium:'Mellem',hard:'Svaer'};
+  showToast('Svaerhedsgrad sat: '+labels[diff],'success');
+}
+
+function teacherStartStudent(safe){
+  var updates={};
+  updates['students/'+safe+'/teacherStarted']=true;
+  window._update(window._ref(window._db),updates)
+    .then(function(){showToast('Elev startet!','success');})
+    .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
+}
+
+function setAllDifficulty(diff){
+  var labels={easy:'Let',medium:'Mellem',hard:'Svaer'};
+  dbGet('students').then(function(snap){
+    var data=snap.val()||{};
+    var keys=Object.keys(data);
+    if(keys.length===0){showToast('Ingen elever at tildele','error');return;}
+    var updates={};
+    keys.forEach(function(k){updates['students/'+k+'/difficulty']=diff;});
+    window._update(window._ref(window._db),updates)
+      .then(function(){showToast('Alle elever sat til: '+labels[diff],'success');})
+      .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
+  });
+}
+
+function startAllStudents(){
+  dbGet('students').then(function(snap){
+    var data=snap.val()||{};
+    var keys=Object.keys(data).filter(function(k){return data[k]&&data[k].difficulty;});
+    if(keys.length===0){showToast('Ingen elever har faet tildelt svaerhedsgrad endnu','error');return;}
+    var updates={};
+    keys.forEach(function(k){updates['students/'+k+'/teacherStarted']=true;});
+    window._update(window._ref(window._db),updates)
+      .then(function(){showToast('Alle elever startet! (med svaerhedsgrad)','success');})
+      .catch(function(){showToast('Fejl – tjek Firebase regler','error');});
+  });
+}
+
 // ── TEACHER ────────────────────────────────────────────────────────────────────
 function loadTeacherDashboard(){
   if(studentListener)return;
@@ -3184,18 +3277,7 @@ function renderTeacherTable(data){
     var dot=st.online?'':'offline';
     var tXP=st.totalXP||st.xp||0;
     var crown=tXP>=5000?'🏆 ':'';
-    return '<div class="student-row">'
-      +'<div class="student-name"><div class="online-dot '+dot+'"></div>'+crown+escHtml(st.name)+'</div>'
-      +'<div><span class="diff-badge '+(st.difficulty||'easy')+'">'+dl+'</span></div>'
-      +'<div style="color:var(--easy);font-weight:800">'+c+'</div>'
-      +'<div class="hide-sm" style="color:var(--accent2);font-weight:800">'+w+'</div>'
-      +'<div>'
-        +'<div style="font-weight:800;margin-bottom:2px">'+pct+'%</div>'
-        +'<div style="font-size:.75rem;color:var(--accent);margin-bottom:3px">⭐ '+tXP+' XP total</div>'
-        +'<div class="pct-bar-wrap"><div class="pct-bar '+pc+'" style="width:'+pct+'%"></div></div>'
-      +'</div>'
-      +'<div><button class="kick-btn" onclick="askKick(\''+safe+'\',\''+escHtml(st.name)+'\')">Fjern</button></div>'
-      +'</div>';
+    return '<div class="student-row" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.5fr 1fr;">'      +'<div class="student-name"><div class="online-dot '+dot+'></div>'+crown+escHtml(st.name)+'</div>'      +'<div><span class="diff-badge '+(st.difficulty||'none')+'">'+(st.difficulty?dl:'—')+'</span></div>'      +'<div style="color:var(--easy);font-weight:800">'+c+'</div>'      +'<div class="hide-sm" style="color:var(--accent2);font-weight:800">'+w+'</div>'      +'<div>'        +'<div style="font-weight:800;margin-bottom:2px">'+pct+'%</div>'        +'<div style="font-size:.75rem;color:var(--accent);margin-bottom:3px">&#11088; '+tXP+' XP total</div>'        +'<div class="pct-bar-wrap"><div class="pct-bar '+pc+'" style="width:'+pct+'%"></div></div>'      +'</div>'      +'<div style="display:flex;flex-wrap:wrap;gap:4px;">'        +'<button class="btn btn-sm" style="background:var(--easy);color:#fff;border:none;font-size:.72rem;padding:4px 7px;" onclick="teacherSetDiff(\''+safe+'\',\'easy\')">&#127984;</button>'        +'<button class="btn btn-sm" style="background:var(--medium);color:#fff;border:none;font-size:.72rem;padding:4px 7px;" onclick="teacherSetDiff(\''+safe+'\',\'medium\')">&#129001;</button>'        +'<button class="btn btn-sm" style="background:var(--hard);color:#fff;border:none;font-size:.72rem;padding:4px 7px;" onclick="teacherSetDiff(\''+safe+'\',\'hard\')">&#128308;</button>'        +'<button class="btn btn-sm" style="background:var(--accent);color:#1a1200;border:none;font-size:.72rem;padding:4px 7px;font-weight:900;" onclick="teacherStartStudent(\''+safe+'\')">&#9654;</button>'      +'</div>'      +'<div><button class="kick-btn" onclick="askKick(\''+safe+'\',\''+escHtml(st.name)+'\')\">Fjern</button></div>'      +'</div>';
   }).join('');
 }
 

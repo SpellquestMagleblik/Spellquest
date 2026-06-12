@@ -974,7 +974,7 @@ const WORDS = {
     {word:"willing",hint:"Ready or happy to do something 😊",da:"villig"},
     {word:"wisdom",hint:"Good sense from experience 🧠",da:"visdom"},
     {word:"wonder",hint:"Feeling amazed or curious 🤩",da:"undre / vidunder"},
-    {word:"worried",hint:"Feeling anxious about something 😟",da:"bekymret"},,
+    {word:"worried",hint:"Feeling anxious about something 😟",da:"bekymret"},
     {word:"abundance",hint:"A very large quantity 🌊",da:"overflod"},
     {word:"accident",hint:"An unplanned harmful event 🚗",da:"ulykke"},
     {word:"activate",hint:"To make something start working ▶️",da:"aktivere"},
@@ -1815,7 +1815,6 @@ const WORDS = {
     {word:"universally",hint:"In a way that applies to all 🌍",da:"universelt"},
     {word:"westernisation",hint:"Adoption of western culture 🌍",da:"vestliggørelse"},
     {word:"whistleblower",hint:"A person who exposes wrongdoing 📢",da:"whistleblower"},
-,
     {word:"circumnavigate",hint:"To travel all the way around something 🌍",da:"omrunde/sejle rundt om"},
     {word:"classification",hint:"The action of classifying something 📂",da:"klassificering"},
     {word:"commodification",hint:"Treating something as a commodity 💰",da:"kommercialisering"},
@@ -2883,7 +2882,7 @@ function wordWon(){
   xp+=currentDiff==='easy'?10:currentDiff==='medium'?20:30;
   showFeedback('Rigtigt!','success');
   saveProgress(true);
-  setTimeout(nextWord,1100);
+  _nextWordTimer=setTimeout(nextWord,1100);
 }
 function wordLost(){
   wordLocked=true;
@@ -2904,9 +2903,10 @@ function wordLost(){
   showFeedback(currentWord.word.toUpperCase(),'fail');
   showToast('Ordet var: '+currentWord.word.toUpperCase()+(puUsed.shield?' 🛡️':wordPenalty>0?' (-'+wordPenalty+' XP)':''),'error');
   saveProgress(false);
-  setTimeout(nextWord,1600);
+  _nextWordTimer=setTimeout(nextWord,1600);
 }
-function nextWord(){wordIndex++;loadWord();}
+var _nextWordTimer=null;
+function nextWord(){_nextWordTimer=null;wordIndex++;loadWord();}
 
 var isKicked=false;
 // ── KLASSEBAROMETER ────────────────────────────────────────────────────────────
@@ -3102,6 +3102,7 @@ function buyPowerup(type){
 }
 function rescueWord(){
   _clearFreezeTimer();
+  if(_nextWordTimer){clearTimeout(_nextWordTimer);_nextWordTimer=null;}
   wordLocked=false;
   var row=document.getElementById('powerup-row');if(row)row.style.display='block';
   wordIndex++;

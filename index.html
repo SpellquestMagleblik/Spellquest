@@ -3308,7 +3308,28 @@ function renderTeacherTable(data){
     var dot=st.online?'':'offline';
     var tXP=st.totalXP||st.xp||0;
     var crown=tXP>=5000?'🏆 ':'';
-    return '<div class="student-row" style="grid-template-columns:2fr 1fr 1fr 1fr 1fr 1.5fr 1fr;">'      +'<div class="student-name"><div class="online-dot '+dot+'></div>'+crown+escHtml(st.name)+'</div>'      +'<div><span class="diff-badge '+(st.difficulty||'none')+'">'+(st.difficulty?dl:'—')+'</span></div>'      +'<div style="color:var(--easy);font-weight:800">'+c+'</div>'      +'<div class="hide-sm" style="color:var(--accent2);font-weight:800">'+w+'</div>'      +'<div>'        +'<div style="font-weight:800;margin-bottom:2px">'+pct+'%</div>'        +'<div style="font-size:.75rem;color:var(--accent);margin-bottom:3px">&#11088; '+tXP+' XP total</div>'        +'<div class="pct-bar-wrap"><div class="pct-bar '+pc+'" style="width:'+pct+'%"></div></div>'      +'</div>'      +'<div style="display:flex;flex-wrap:wrap;gap:4px;">'        +'<button class="btn btn-sm" style="background:var(--easy);color:#fff;border:none;font-size:.72rem;padding:4px 7px;" onclick="teacherSetDiff(\''+safe+'\',\'easy\')">&#127984;</button>'        +'<button class="btn btn-sm" style="background:var(--medium);color:#fff;border:none;font-size:.72rem;padding:4px 7px;" onclick="teacherSetDiff(\''+safe+'\',\'medium\')">&#129001;</button>'        +'<button class="btn btn-sm" style="background:var(--hard);color:#fff;border:none;font-size:.72rem;padding:4px 7px;" onclick="teacherSetDiff(\''+safe+'\',\'hard\')">&#128308;</button>'        +'<button class="btn btn-sm" style="background:var(--accent);color:#1a1200;border:none;font-size:.72rem;padding:4px 7px;font-weight:900;" onclick="teacherStartStudent(\''+safe+'\')">&#9654;</button>'      +'</div>'      +'<div><button class="kick-btn" onclick="askKick(\''+safe+'\',\''+escHtml(st.name)+'\')\">Fjern</button></div>'      +'</div>';
+    var diffLabel2={easy:'Let',medium:'Mellem',hard:'Svaer'}[st.difficulty]||'';
+    var activeBorder=function(d){return d===(st.difficulty||'')?'2px solid rgba(255,255,255,.9)':'2px solid transparent';};
+    var row='';
+    row+='<div class="student-row">';
+    row+='<div class="student-name"><div class="online-dot '+dot+'"></div>'+crown+escHtml(st.name)+'</div>';
+    row+='<div>'+(st.difficulty?'<span class="diff-badge '+st.difficulty+'">'+diffLabel2+'</span>':'<span style="color:var(--text2);">—</span>')+'</div>';
+    row+='<div style="color:var(--easy);font-weight:800;font-size:1.05rem;">'+c+'</div>';
+    row+='<div style="color:var(--accent2);font-weight:800;font-size:1.05rem;">'+w+'</div>';
+    row+='<div>';
+    row+=  '<div style="font-weight:800;font-size:.95rem;margin-bottom:2px;">'+pct+'%</div>';
+    row+=  '<div style="font-size:.72rem;color:var(--accent);">&#11088; '+tXP+' XP</div>';
+    row+=  '<div class="pct-bar-wrap" style="margin-top:4px;"><div class="pct-bar '+pc+'" style="width:'+pct+'%;"></div></div>';
+    row+='</div>';
+    row+='<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">';
+    row+=  '<button class="btn btn-sm" style="background:var(--easy);color:#fff;outline:'+activeBorder('easy')+';outline-offset:1px;font-size:.73rem;padding:5px 8px;font-weight:800;border:none;" onclick="teacherSetDiff(''+safe+'','easy')">Let</button>';
+    row+=  '<button class="btn btn-sm" style="background:var(--medium);color:#fff;outline:'+activeBorder('medium')+';outline-offset:1px;font-size:.73rem;padding:5px 8px;font-weight:800;border:none;" onclick="teacherSetDiff(''+safe+'','medium')">Mellem</button>';
+    row+=  '<button class="btn btn-sm" style="background:var(--hard);color:#fff;outline:'+activeBorder('hard')+';outline-offset:1px;font-size:.73rem;padding:5px 8px;font-weight:800;border:none;" onclick="teacherSetDiff(''+safe+'','hard')">Svaer</button>';
+    row+=  '<button class="btn btn-sm" style="background:var(--accent);color:#1a1200;border:none;font-size:.73rem;padding:5px 8px;font-weight:900;" title="Start spillet" onclick="teacherStartStudent(''+safe+'')">&#9654;</button>';
+    row+='</div>';
+    row+='<div><button class="kick-btn" onclick="askKick(''+safe+'',''+escHtml(st.name)+'')">Fjern</button></div>';
+    row+='</div>';
+    return row
   }).join('');
 }
 

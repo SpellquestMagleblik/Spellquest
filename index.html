@@ -2737,6 +2737,7 @@ function _applyTeacherDiff(d){
   showToast(labels[d]||'Svaerhedsgrad aendret','success');
   // Gem IKKE tilbage til Firebase herfra – det ville lave en uendelig loekke med lytteren
   if(!wordLocked){
+    _clearNextWordTimer(); // afbryd evt. pending nextWord inden vi loader nyt ord
     loadWord(); // start straks nyt ord fra ny svaerhedsgrad
   }
   // Hvis ordet er laast (eleven er ved at se facit), loader naeste ord alligevel snart via nextWord()
@@ -2745,6 +2746,7 @@ function _applyTeacherDiff(d){
 // ── LOAD WORD ──────────────────────────────────────────────────────────────────
 function loadWord(){
   _clearFreezeTimer();
+  _clearNextWordTimer();
   wordLocked=false; // Sørg for at lås altid fjernes inden nyt ord begynder
   if(wordIndex>=playerWords.length){
     // Pool exhausted – reshuffle and continue forever
@@ -2907,6 +2909,7 @@ function wordLost(){
 }
 var _nextWordTimer=null;
 function nextWord(){_nextWordTimer=null;wordIndex++;loadWord();}
+function _clearNextWordTimer(){if(_nextWordTimer){clearTimeout(_nextWordTimer);_nextWordTimer=null;}}
 
 var isKicked=false;
 // ── KLASSEBAROMETER ────────────────────────────────────────────────────────────
@@ -2999,7 +3002,18 @@ function updateLevelUI(){
 }
 var _freezeTimer=null;
 function _clearFreezeTimer(){if(_freezeTimer){clearTimeout(_freezeTimer);_freezeTimer=null;}var rb=document.getElementById('rescue-btn');if(rb)rb.style.display='none';}
-function _startFreezeTimer(){_clearFreezeTimer();_freezeTimer=setTimeout(function(){var rb=document.getElementById('rescue-btn');if(rb&&wordLocked)rb.style.display='block';},3500);}
+function _startFreezeTimer(){
+  _clearFreezeTimer();
+  _freezeTimer=setTimeout(function(){
+    var rb=document.getElementById('rescue-btn');
+    if(rb&&wordLocked){
+      rb.style.display='block';
+    } else if(wordLocked){
+      // Rescue-knap mangler i DOM – tving videre til næste ord for at undgå frysning
+      if(!_nextWordTimer){wordIndex++;loadWord();}
+    }
+  },3500);
+}
 function useHint(){
   if(hintUsed||wordLocked)return;
   hintUsed=true;
@@ -3102,7 +3116,7 @@ function buyPowerup(type){
 }
 function rescueWord(){
   _clearFreezeTimer();
-  if(_nextWordTimer){clearTimeout(_nextWordTimer);_nextWordTimer=null;}
+  _clearNextWordTimer();
   wordLocked=false;
   var row=document.getElementById('powerup-row');if(row)row.style.display='block';
   wordIndex++;
